@@ -1,6 +1,4 @@
 #include "dict.h"
-#include "dlist.h"
-#include "darray.h"
 
 static void destroy_kv_pair(void* data) {
     kv_pair_t *pair = (kv_pair_t *)data;
@@ -13,15 +11,18 @@ static void destroy_dlist(void* data) {
     dlist_destroy_list(list);
 }
 
-DEFINE_TYPE(dlist, dlist_t, destroy_dlist, NULL)
-DEFINE_TYPE(key_value_pair, kv_pair_t, destroy_kv_pair, NULL)
+DType dlist_t_type = {"dlist_t",sizeof(dlist_t),destroy_dlist,NULL};
+DType key_value_pair_type = { "kv_pair_t", sizeof(kv_pair_t), destroy_kv_pair, NULL};
+
+DEFINE_TYPE(dlist, dlist_t_type, dlist_t)
+DEFINE_TYPE(key_value_pair, key_value_pair_type, kv_pair_t)
 
 static void dict_init_internal(dict_t* dict, size_t initial_capacity, hash_func hash_fn, key_eq key_eq_fn) {
     dict->buckets = darray_init(initial_capacity);
     darray_resize(&dict->buckets, initial_capacity);
     for (int i = 0; i < initial_capacity; i++) {
         dlist_t list = dlist_create();
-        darray_set(&dict->buckets, i, let_dlist_t(&list));
+        darray_set(&dict->buckets, i, let_dlist(&list));
     }
 
     dict->capacity = initial_capacity;
@@ -39,9 +40,9 @@ static void dict_init_internal(dict_t* dict, size_t initial_capacity, hash_func 
     pthread_mutexattr_destroy(&attr);
 }
 
-dict_t dict_init(size_t initial_capacity, hash_func hash_fn, key_eq key_eq_fn) {
+dict_t dict_init(hash_func hash_fn, key_eq key_eq_fn) {
     dict_t dict;
-    dict_init_internal(&dict, initial_capacity, hash_fn, key_eq_fn);
+    dict_init_internal(&dict, 1, hash_fn, key_eq_fn);
     return dict;
 }
 
@@ -62,7 +63,7 @@ static int find_key_in_chain(dlist_t *list, Object key, key_eq key_eq_fn) {
     dlist_node_t *node = list->head;
 
     while (node) {
-        kv_pair_t *pair = get_kv_pair_t(node->data);
+        kv_pair_t *pair = get_key_value_pair(node->data);
         if (key_eq_fn(pair->key, key)) {
             return index;
         }
@@ -88,11 +89,11 @@ void dict_insert(dict_t *dict, Object key, Object value) {
     pthread_mutex_lock(dict->lock);
 
     size_t index = dict->hash_fn(key) % dict->capacity;
-    dlist_t *list = get_dlist_t(darray_get(&dict->buckets, index));
+    dlist_t *list = get_dlist(darray_get(&dict->buckets, index));
     int i = find_key_in_chain(list, key, dict->key_eq_fn);
 
     if (i != -1) {
-        kv_pair_t *pair = get_kv_pair_t(dlist_get_at(list, i));
+        kv_pair_t *pair = get_key_value_pair(dlist_get_at(list, i));
         destroy(pair->value);
         pair->value = ref(value);
         return;
@@ -101,11 +102,11 @@ void dict_insert(dict_t *dict, Object key, Object value) {
     if (should_resize(dict)) {
         dict_resize(dict, dict->capacity * 2);
         index = dict->hash_fn(key) % dict->capacity;
-        list = get_dlist_t(darray_get(&dict->buckets, index));
+        list = get_dlist(darray_get(&dict->buckets, index));
     }
 
     kv_pair_t pair = {ref(key), ref(value)};
-    Object obj = let_kv_pair_t(&pair);
+    Object obj = let_key_value_pair(&pair);
 
     dlist_insert_last(list, obj);
     dict->size++;
@@ -120,11 +121,11 @@ Object dict_get(dict_t *dict, Object key, Object default_value) {
     pthread_mutex_lock(dict->lock);
 
     size_t index = dict->hash_fn(key) % dict->capacity;
-    dlist_t *list = get_dlist_t(darray_get(&dict->buckets, index));
+    dlist_t *list = get_dlist(darray_get(&dict->buckets, index));
     int i = find_key_in_chain(list, key, dict->key_eq_fn);
 
     if (i != -1) {
-        kv_pair_t *pair = get_kv_pair_t(dlist_get_at(list, i));
+        kv_pair_t *pair = get_key_value_pair(dlist_get_at(list, i));
         pthread_mutex_unlock(dict->lock);
         return ref(pair->value);
     }
@@ -141,11 +142,11 @@ Object dict_delete(dict_t *dict, Object key) {
     pthread_mutex_lock(dict->lock);
 
     size_t index = dict->hash_fn(key) % dict->capacity;
-    dlist_t *list = get_dlist_t(darray_get(&dict->buckets, index));
+    dlist_t *list = get_dlist(darray_get(&dict->buckets, index));
     int i = find_key_in_chain(list, key, dict->key_eq_fn);
 
-    if (index != -1) {
-        kv_pair_t *pair = get_kv_pair_t(dlist_get_at(list, i));
+    if (i != -1) {
+        kv_pair_t *pair = get_key_value_pair(dlist_get_at(list, i));
         Object value = ref(pair->value);
         dlist_delete_at(list, i);
         dict->size--;
@@ -166,17 +167,17 @@ void dict_resize(dict_t *dict, size_t new_capacity) {
     darray_resize(&new_buckets, new_capacity);
     for (int i = 0; i < new_capacity; i++) {
         dlist_t list = dlist_create();
-        darray_set(&new_buckets, i, let_dlist_t(&list));
+        darray_set(&new_buckets, i, let_dlist(&list));
     }
 
     for (size_t i = 0; i < dict->capacity; i++) {
-        dlist_t *old_list = get_dlist_t(darray_get(&dict->buckets, i));
+        dlist_t *old_list = get_dlist(darray_get(&dict->buckets, i));
         dlist_node_t *node = old_list->head;
 
         while (node) {
-            kv_pair_t *pair = get_kv_pair_t(node->data);
+            kv_pair_t *pair = get_key_value_pair(node->data);
             size_t index = dict->hash_fn(pair->key) % new_capacity;
-            dlist_t *new_list = get_dlist_t(darray_get(&new_buckets, index));
+            dlist_t *new_list = get_dlist(darray_get(&new_buckets, index));
             dlist_insert_last(new_list, ref(node->data));
             node = node->next;
         }
