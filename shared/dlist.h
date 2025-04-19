@@ -32,3 +32,6 @@ Object dlist_delete_first(dlist_t *list);
 Object dlist_delete_last(dlist_t *list);
 Object dlist_delete_at(dlist_t *list, size_t index);
 void dlist_destroy_list(dlist_t *list);
+
+extern DType dlist_type;
+DEFINE_TYPE_PROTO(dlist, dlist_type, dlist_t);

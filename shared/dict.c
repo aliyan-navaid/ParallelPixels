@@ -6,16 +6,9 @@ static void destroy_kv_pair(void* data) {
     destroy(pair->value);
 }
 
-static void destroy_dlist(void* data) {
-    dlist_t *list = (dlist_t *)data;
-    dlist_destroy_list(list);
-}
+DType kv_pair_type = {"kv_pair_t", sizeof(kv_pair_t), destroy_kv_pair, NULL};
 
-DType dlist_t_type = {"dlist_t",sizeof(dlist_t),destroy_dlist,NULL};
-DType key_value_pair_type = { "kv_pair_t", sizeof(kv_pair_t), destroy_kv_pair, NULL};
-
-DEFINE_TYPE(dlist, dlist_t_type, dlist_t)
-DEFINE_TYPE(key_value_pair, key_value_pair_type, kv_pair_t)
+DEFINE_TYPE(key_value_pair, kv_pair_type, kv_pair_t)
 
 static void dict_init_internal(dict_t* dict, size_t initial_capacity, hash_func hash_fn, key_eq key_eq_fn) {
     dict->buckets = darray_init(initial_capacity);
