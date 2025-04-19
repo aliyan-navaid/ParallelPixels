@@ -1,22 +1,17 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
+
+#include <city.h>
 
 int main() {
-    // test strdup
-    const char *some_string = "\0";
-    char *copy = strdup(some_string);
+    const char *my_name = "Muhammad Farooq";
+    uint64_t hash = CityHash64(my_name, strlen(my_name));
+    printf("Hash of '%s': %lu\n", my_name, hash);
+    printf("Hash of '%s': %lu\n", my_name, CityHash64(my_name, strlen(my_name)));
 
-    if (copy == NULL) {
-        fprintf(stderr, "strdup failed\n");
-        return 1;
-    }
-    printf("Original string: %s\n", some_string);
-    printf("Copied string: %s\n", copy);
-    printf("Length of original string: %zu\n", strlen(some_string));
-    printf("Length of copied string: %zu\n", strlen(copy));
-    printf("Original string address: %p\n", (void *)some_string);
-    printf("Copied string address: %p\n", (void *)copy);
+    my_name = "muhammad farooq";
+    printf("Hash of '%s': %lu\n", my_name, CityHash64(my_name, strlen(my_name)));
 
     return 0;
 }
