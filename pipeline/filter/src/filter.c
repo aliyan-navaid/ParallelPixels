@@ -68,3 +68,27 @@ void directional_blur(image_chunk_t* chunk, int line_size) {
         }
     }
 }
+
+void posterize(image_chunk_t* chunk, int levels) {
+    if (!chunk) {
+        fprintf(stderr, "Error: chunk is NULL\n");
+        return;
+    }
+    if (!chunk->pixel_data) {
+        fprintf(stderr, "Error: pixel_data is NULL\n");
+        return;
+    }
+
+    int width = chunk->width;
+    int height = chunk->height;
+    int channels = chunk->channels;
+    unsigned char* pixel = chunk->pixel_data;
+
+    int step = 256 / levels;
+
+    for (int i = 0; i < width * height * channels; i += channels) {
+        for (int c = 0; c < channels; ++c) {
+            pixel[i + c] = (pixel[i + c] / step) * step;
+        }
+    }
+}
