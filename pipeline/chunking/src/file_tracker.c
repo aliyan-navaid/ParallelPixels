@@ -4,9 +4,7 @@
 #include<stdbool.h>    
 #include<file_tracker.h> 
 
-extern processed_file_t *processed_files; 
-
-void processed_files_init(void) { processed_files = NULL; }
+processed_file_t *processed_files = NULL; 
 
 // Function to add a filename to the hash table
 void add_processed_file(const char *filename) {
