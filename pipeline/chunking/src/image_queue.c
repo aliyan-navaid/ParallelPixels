@@ -109,6 +109,12 @@ char* dequeue_image_name(image_name_queue_t *q) {
     return name; 
 }
 
+void broadcast_image_name_queue(image_name_queue_t* q) {
+    pthread_mutex_lock(&q->lock);
+    pthread_cond_broadcast(&q->cond_not_empty);
+    pthread_mutex_unlock(&q->lock);
+}
+
 void image_name_queue_destroy(image_name_queue_t* q) {
     if (q == NULL) 
         return;

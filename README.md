@@ -38,4 +38,3 @@
   - (Optional) Thread pooling
 
 ## Why not create a thread for each chunk, filter chunk in that thread, and reconstruct chunks sequentially? 
-

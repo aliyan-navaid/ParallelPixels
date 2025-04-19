@@ -63,6 +63,8 @@ int enqueue_image_name(image_name_queue_t *q, const char *name);
  */
 char* dequeue_image_name(image_name_queue_t *q);
 
+void broadcast_image_name_queue(image_name_queue_t* q);
+
 /**
  * @brief Destroys an image name queue, freeing all nodes and associated resources.
  *

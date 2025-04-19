@@ -15,6 +15,7 @@ typedef struct {
     void_process_function_ptr free_processed_files; */
 } processed_file_t;
 
+void processed_files_init(void);
 void add_processed_file(const char *filename);
 bool was_file_processed(const char *filename);
 void free_processed_files(void);

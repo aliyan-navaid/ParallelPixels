@@ -109,6 +109,8 @@ int chunk_enqueue(chunk_queue_t* q, image_chunk_t* c);
  */
 image_chunk_t* chunk_dequeue(chunk_queue_t* q);
 
+void broadcast_chunk_queue(chunk_queue_t* q);
+
 /**
  * @brief Destroys a chunk queue, freeing all nodes and associated resources.
  *

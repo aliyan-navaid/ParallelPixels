@@ -12,11 +12,52 @@
 #include<directory_monitor.h>
 #include<chunk_threader.h>
 
+processed_file_t* processed_files;
 image_name_queue_t name_queue;
-chunk_queue_t chunker_filtering_queue;
-chunk_queue_t filtering_reconstruction_queue;
+chunk_queue_t chunker_filtering_queue, filtering_reconstruction_queue;
 
 volatile sig_atomic_t stop_flag = 0;
+
+int Initialization(void) {
+
+    processed_files_init();
+
+    if (image_name_queue_init(&name_queue) != 0) {
+        fprintf(stderr, "Failed to initialize name queue.\n");
+        return EXIT_FAILURE;
+    }
+
+    if (chunk_queue_init(&chunker_filtering_queue) != 0) {
+        fprintf(stderr, "Failed to initialize filtering->reconstruction queue.\n");
+        image_name_queue_destroy(&name_queue); 
+        return EXIT_FAILURE;
+    }
+
+    if (chunk_queue_init(&filtering_reconstruction_queue) != 0) {
+        fprintf(stderr, "Failed to initialize chunker->filtering queue.\n");
+        image_name_queue_destroy(&name_queue); 
+        chunk_queue_destroy(&chunker_filtering_queue);
+        return EXIT_FAILURE;
+    }
+
+    if (discarded_images_init() != 0) {
+        fprintf(stderr, "Failed to initialize discarded images table.\n");
+        image_name_queue_destroy(&name_queue);
+        chunk_queue_destroy(&chunker_filtering_queue);
+        chunk_queue_destroy(&filtering_reconstruction_queue);
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+void cleanup_resources(void) {
+    free_processed_files(); 
+    image_name_queue_destroy(&name_queue);
+    chunk_queue_destroy(&chunker_filtering_queue);
+    chunk_queue_destroy(&filtering_reconstruction_queue);
+    free_discarded_images_table();
+}
 
 void ExitHandler(int signum) {
     stop_flag = 1;
@@ -24,8 +65,10 @@ void ExitHandler(int signum) {
     write(STDOUT_FILENO, msg, sizeof(msg) - 1);
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
+    
     const char *directoryPath = "../images";
+    int exit_status = 0;
 
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
     const size_t num_chunker_threads = (cores > 1)? (size_t)cores: 2; 
@@ -60,34 +103,21 @@ int main(void) {
 
     closedir(dir_check);
 
-    if (image_name_queue_init(&name_queue) != 0) {
-        fprintf(stderr, "Failed to initialize name queue.\n");
+    if (Initialization() != EXIT_SUCCESS)
         return EXIT_FAILURE;
-    }
-
-    if (chunk_queue_init(&chunker_filtering_queue) != 0) {
-        fprintf(stderr, "Failed to initialize chunker->filtering queue.\n");
-        image_name_queue_destroy(&name_queue); // Cleanup previous init
-        return EXIT_FAILURE;
-    }
-
-    if (discarded_images_init()) {
-        fprintf(stderr, "Failed to initialize discarded images table.\n");
-        return EXIT_FAILURE;
-    }
 
     chunker_threads = malloc(num_chunker_threads * sizeof(pthread_t));
     if (chunker_threads == NULL) {
         perror("Failed to allocate memory for chunker thread IDs");
-        image_name_queue_destroy(&name_queue);
-        chunk_queue_destroy(&chunker_filtering_queue);
-        return EXIT_FAILURE;
+        exit_status = EXIT_FAILURE;
+        goto Cleanup;
     }
     
     printf("Starting image watcher thread for directory: %s\n", directoryPath);
     if (pthread_create(&watcher_thread, NULL, read_images_from_directory, (void *)directoryPath) != 0) { // Removed watcher_attr
         perror("Failed to create watcher thread");
-        return EXIT_FAILURE;
+        exit_status = EXIT_FAILURE;
+        goto Cleanup;
     }
 
     printf("Starting %zu chunker threads...\n", num_chunker_threads);
@@ -97,26 +127,24 @@ int main(void) {
 
             stop_flag = 1; 
 
-            pthread_mutex_lock(&name_queue.lock); 
-            pthread_cond_broadcast(&name_queue.cond_not_empty);
-            pthread_mutex_unlock(&name_queue.lock); 
+            broadcast_image_name_queue(&name_queue);
+            broadcast_chunk_queue(&chunker_filtering_queue);
+            broadcast_chunk_queue(&filtering_reconstruction_queue);
 
-            pthread_mutex_lock(&chunker_filtering_queue.lock); 
-            pthread_cond_broadcast(&chunker_filtering_queue.cond_not_empty);
-            pthread_mutex_unlock(&chunker_filtering_queue.lock); 
-
-            for (size_t j = 0; j < i; ++j) {
+            for (size_t j = 0; j < i; j++) 
                 pthread_join(chunker_threads[j], NULL);
-                pthread_join(watcher_thread, NULL);
-                free(chunker_threads);
-                image_name_queue_destroy(&name_queue);
-                chunk_queue_destroy(&chunker_filtering_queue);
-                return EXIT_FAILURE;
-            }
+            
+            pthread_join(watcher_thread, NULL);
+            exit_status = EXIT_FAILURE;
+            goto Cleanup;
         }
     }
     
+    // Aliyan TODO: instead of a function call, create threads here (Use thread pool).
+    // Join them later
     assign_threads_to_chunk();
+
+    // create reconstruction threads here.
 
     printf("Watcher thread started. Waiting for signal (SIGINT/SIGTERM)...\n");
     while (!stop_flag) 
@@ -127,30 +155,30 @@ int main(void) {
     pthread_join(watcher_thread, NULL); 
 
     printf("Broadcasting to chunker threads...\n");
-    pthread_mutex_lock(&name_queue.lock); 
-    pthread_cond_broadcast(&name_queue.cond_not_empty);
-    pthread_mutex_unlock(&name_queue.lock); 
-
-    pthread_mutex_lock(&chunker_filtering_queue.lock); 
-    pthread_cond_broadcast(&chunker_filtering_queue.cond_not_empty);
-    pthread_mutex_unlock(&chunker_filtering_queue.lock); 
+    broadcast_image_name_queue(&name_queue);
+    broadcast_chunk_queue(&chunker_filtering_queue);
+    broadcast_chunk_queue(&filtering_reconstruction_queue);
 
     printf("Waiting for chunker threads to finish...\n");
-    for (size_t i = 0; i < num_chunker_threads; ++i) {
+    for (size_t i = 0; i < num_chunker_threads; i++) {
         pthread_join(chunker_threads[i], NULL);
         printf("Chunker thread %zu finished.\n", i);
     }
+
+    // join filtering threads here. 
+
+    // join reconstructio threads here.
 
     printf("All chunker threads finished.\n");
 
     printf("Cleaning up resources...\n");
 
-    free_processed_files(); 
-    image_name_queue_destroy(&name_queue);
-    chunk_queue_destroy(&chunker_filtering_queue);
-    free_discarded_images_table();
+    Cleanup:
+        cleanup_resources();
+        free(chunker_threads);
+        chunker_threads = NULL;
 
     printf("Cleanup complete. Exiting.\n");
 
-    return 0; 
+    return exit_status; 
 }

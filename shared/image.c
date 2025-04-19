@@ -98,6 +98,12 @@ image_chunk_t* chunk_dequeue(chunk_queue_t* q) {
     return chunk;
 }
 
+void broadcast_chunk_queue(chunk_queue_t* q) {
+    pthread_mutex_lock(&q->lock);
+    pthread_cond_broadcast(&q->cond_not_empty);
+    pthread_mutex_unlock(&q->lock);
+}
+
 void chunk_queue_destroy(chunk_queue_t* q) {
     if (q == NULL) 
         return;
