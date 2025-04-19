@@ -12,16 +12,12 @@
 #include<directory_monitor.h>
 #include<chunk_threader.h>
 
-processed_file_t* processed_files;
 image_name_queue_t name_queue;
 chunk_queue_t chunker_filtering_queue, filtering_reconstruction_queue;
 
 volatile sig_atomic_t stop_flag = 0;
 
 int Initialization(void) {
-
-    processed_files_init();
-
     if (image_name_queue_init(&name_queue) != 0) {
         fprintf(stderr, "Failed to initialize name queue.\n");
         return EXIT_FAILURE;
