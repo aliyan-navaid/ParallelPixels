@@ -84,7 +84,7 @@ static inline void write_image(image_t *image, const char *path) {
     // write the image to a file
     assert(image != NULL && path != NULL);
 
-    int result = stbi_write_tga(path, image->width, image->height, image->channels, image->pixel_data);
+    int result = stbi_write_png(path, image->width, image->height, image->channels, image->pixel_data, image->width * image->channels);
     assert(result != 0);
 }
 
