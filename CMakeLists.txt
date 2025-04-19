@@ -22,10 +22,10 @@ add_executable(main
 )
 
 target_include_directories(main PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared                 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/chunking/include 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/filter/include 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/reconstruction/include 
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared                   # Shared types (image.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/chunking/include # Chunking headers + uthash
+    ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/filter/include # Filtering headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/reconstruction # Reconstruction headers
 )
 
 target_link_libraries(main PRIVATE

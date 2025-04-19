@@ -1,7 +1,8 @@
 #pragma once
 
-#include<stddef.h>
-#include<pthread.h>
+#include<stddef.h> // For size_t
+#include<stdint.h>
+#include<pthread.h> // For pthread types
 #include<uthash.h>
 #include<stdbool.h>
 
@@ -31,6 +32,13 @@ typedef struct chunk_queue_node {
     struct chunk_queue_node* next;
     image_chunk_t* chunk;
 } chunk_queue_node_t;
+
+typedef struct {
+    unsigned char *pixel_data;
+
+    size_t width, height;
+    uint32_t channels;
+} image_t;
 
 typedef struct {
     chunk_queue_node_t *head;
