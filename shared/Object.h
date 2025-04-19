@@ -37,9 +37,10 @@ Object let_none(void);
 #define None let_none()
 #define NoneType let_none().type
 
-#define DEFINE_TYPE(NAME, TYPE, DESTROY_FUNC, CREATE_FUNC)                \
-    DType type_##TYPE = {#NAME, sizeof(TYPE), DESTROY_FUNC, CREATE_FUNC}; \
-    Object let_##TYPE(TYPE *data) { return let(data, type_##TYPE); }      \
-    Object let_v_##TYPE(TYPE data) { return let(&data, type_##TYPE); }    \
-    TYPE get_v_##TYPE(Object obj) { return *(TYPE *)obj.data; }           \
-    TYPE *get_##TYPE(Object obj) { return (TYPE *)obj.data; }
+#ifndef DEFINE_TYPE
+#define DEFINE_TYPE(NAME, DTYPE, TYPE) \
+    Object let_##NAME(TYPE *data) { return let(data, DTYPE); } \
+    Object let_##NAME##_v(TYPE data) { return let(&data, DTYPE); } \
+    TYPE* get_##NAME(Object obj) { return (TYPE *)obj.data; } \
+    TYPE get_##NAME##_v(Object obj) { return *(TYPE *)obj.data; }
+#endif

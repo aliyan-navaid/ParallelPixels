@@ -30,7 +30,7 @@ typedef struct
     pthread_mutex_t *lock;
 } dict_t;
 
-dict_t dict_init(size_t initial_capacity, hash_func hash_fn, key_eq key_eq_fn);
+dict_t dict_init(hash_func hash_fn, key_eq key_eq_fn);
 void dict_destroy(dict_t *dict);
 
 void dict_insert(dict_t *dict, Object key, Object value);
