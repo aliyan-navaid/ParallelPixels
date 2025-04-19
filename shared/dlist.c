@@ -1,6 +1,15 @@
 #include <assert.h>
 #include "dlist.h"
 
+static void destroy_dlist(void* data) {
+    dlist_t *list = (dlist_t *)data;
+    dlist_destroy_list(list);
+}
+
+DType dlist_type = {"dlist_t",sizeof(dlist_t),destroy_dlist,NULL};
+
+DEFINE_TYPE(dlist, dlist_type, dlist_t)
+
 dlist_node_t *dlist_node_create(Object data) {
     dlist_node_t *node = (dlist_node_t *)malloc(sizeof(dlist_node_t));
     if (node == NULL) {

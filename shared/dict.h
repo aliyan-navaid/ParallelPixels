@@ -19,6 +19,10 @@ typedef struct
     Object value;
 } kv_pair_t;
 
+extern DType kv_pair_type;
+
+DEFINE_TYPE_PROTO(key_value_pair, kv_pair_type, kv_pair_t);
+
 typedef struct
 {
     darray_t buckets;
