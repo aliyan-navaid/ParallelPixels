@@ -29,23 +29,22 @@ void *process_chunk(void *arg) {
 }
 
 void assign_threads_to_chunk(void) {
-    //while (!stop_flag) {
+    while (!stop_flag) {
+
         // Create a new thread for the chunk
         pthread_t thread;
         int result = pthread_create(&thread, NULL, process_chunk, (void*) NULL);
         
         if (result) {
             perror("Error creating thread for chunk");
-            //continue;
+            continue;
         }
-
+        
         // Detach the thread to avoid needing to join it later
         pthread_detach(thread);
-    //}
-
-    while(!stop_flag);
+    }
 
     pthread_mutex_lock(&chunker_filtering_queue.lock);
-    pthread_cond_broadcast(&chunker_filtering_queue.cond_not_empty);
+        pthread_cond_broadcast(&chunker_filtering_queue.cond_not_empty);
     pthread_mutex_unlock(&chunker_filtering_queue.lock);
 }
