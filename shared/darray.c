@@ -2,6 +2,14 @@
 #include <assert.h>
 #include "darray.h"
 
+void destroy_darray(void* data) {
+    darray_t* arr = (darray_t*)data;
+    darray_destroy(arr);
+}
+
+DType darray_type = {"darray", sizeof(darray_t), destroy_darray, NULL};
+DEFINE_TYPE(darray, darray_type, darray_t)
+
 static void darray_init_internal(darray_t* arr, size_t initial_capacity) {
     arr->arr = (Object*)malloc(sizeof(Object) * initial_capacity);
 

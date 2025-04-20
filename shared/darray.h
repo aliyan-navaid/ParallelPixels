@@ -13,6 +13,9 @@ typedef struct
     pthread_mutex_t* lock;
 } darray_t;
 
+extern DType darray_type;
+DEFINE_TYPE_PROTO(darray, darray_type, darray_t)
+
 darray_t darray_init(size_t initial_capacity);
 void darray_destroy(darray_t *arr);
 
