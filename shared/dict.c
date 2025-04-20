@@ -14,7 +14,7 @@ static void dict_init_internal(dict_t* dict, size_t initial_capacity, hash_func 
     dict->buckets = darray_init(initial_capacity);
     darray_resize(&dict->buckets, initial_capacity);
     for (int i = 0; i < initial_capacity; i++) {
-        dlist_t list = dlist_create();
+        dlist_t list = dlist_init();
         darray_set(&dict->buckets, i, let_dlist(&list));
     }
 
@@ -159,7 +159,7 @@ void dict_resize(dict_t *dict, size_t new_capacity) {
     darray_t new_buckets = darray_init(new_capacity);
     darray_resize(&new_buckets, new_capacity);
     for (int i = 0; i < new_capacity; i++) {
-        dlist_t list = dlist_create();
+        dlist_t list = dlist_init();
         darray_set(&new_buckets, i, let_dlist(&list));
     }
 

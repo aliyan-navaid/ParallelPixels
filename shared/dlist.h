@@ -22,7 +22,10 @@ typedef struct
     pthread_mutex_t* lock;
 } dlist_t;
 
-dlist_t dlist_create();
+extern DType dlist_type;
+DEFINE_TYPE_PROTO(dlist, dlist_type, dlist_t)
+
+dlist_t dlist_init();
 Object dlist_get_at(dlist_t *list, size_t index);
 void dlist_set_at(dlist_t *list, size_t index, Object data);
 void dlist_insert_first(dlist_t *list, Object data);
@@ -31,7 +34,4 @@ void dlist_insert_at(dlist_t *list, size_t index, Object data);
 Object dlist_delete_first(dlist_t *list);
 Object dlist_delete_last(dlist_t *list);
 Object dlist_delete_at(dlist_t *list, size_t index);
-void dlist_destroy_list(dlist_t *list);
-
-extern DType dlist_type;
-DEFINE_TYPE_PROTO(dlist, dlist_type, dlist_t);
+void dlist_destroy(dlist_t *list);

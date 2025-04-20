@@ -3,7 +3,7 @@
 
 static void destroy_dlist(void* data) {
     dlist_t *list = (dlist_t *)data;
-    dlist_destroy_list(list);
+    dlist_destroy(list);
 }
 
 DType dlist_type = {"dlist_t",sizeof(dlist_t),destroy_dlist,NULL};
@@ -42,7 +42,7 @@ dlist_node_t *dlist_later_node(dlist_node_t *node, size_t offset) {
     return dlist_later_node(node->next, offset - 1);
 }
 
-dlist_t dlist_create() {
+dlist_t dlist_init() {
     dlist_t list;
 
     list.head = NULL;
@@ -241,7 +241,7 @@ Object dlist_delete_at(dlist_t *list, size_t index) {
     return data;
 }
 
-void dlist_destroy_list(dlist_t *list) {
+void dlist_destroy(dlist_t *list) {
     if (!list) return;
 
     pthread_mutex_lock(list->lock);

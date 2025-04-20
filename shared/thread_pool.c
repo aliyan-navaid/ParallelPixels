@@ -47,7 +47,7 @@ DEFINE_TYPE(thread, thread_object_type, pthread_t)
 
 thread_pool_t* thread_pool_create(int num_threads) {
     thread_pool_t* pool = (thread_pool_t *)malloc(sizeof(thread_pool_t));
-    pool->task_queue = dlist_create();
+    pool->task_queue = dlist_init();
     pool->threads = darray_init(num_threads);
 
 
@@ -91,7 +91,7 @@ void thread_pool_destroy(thread_pool_t* pool) {
 
     // this will join all threads because of custom destroy function
     darray_clear(&pool->threads); 
-    dlist_destroy_list(&pool->task_queue);
+    dlist_destroy(&pool->task_queue);
 
     pthread_mutex_destroy(pool->lock);
     pthread_cond_destroy(pool->cond);
