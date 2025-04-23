@@ -221,12 +221,3 @@ void *chunk_image_thread(void *arg) {
     
     return NULL;
 }
-
-void free_image_chunk(image_chunk_t *chunk) {
-    if (chunk == NULL)
-        return;
-
-    free(chunk->original_image_name);
-    free(chunk->pixel_data);
-    free(chunk);
-}
