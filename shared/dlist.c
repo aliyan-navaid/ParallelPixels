@@ -12,10 +12,9 @@ DEFINE_TYPE(dlist, dlist_type, dlist_t)
 
 dlist_node_t *dlist_node_create(Object data) {
     dlist_node_t *node = (dlist_node_t *)malloc(sizeof(dlist_node_t));
-    if (node == NULL) {
-        return NULL;
-    }
+    if (node == NULL) return NULL;
 
+    // Borrow input, but node takes ownership
     node->data = ref(data);
     node->prev = NULL;
     node->next = NULL;
@@ -34,12 +33,8 @@ void dlist_node_destroy(dlist_node_t *node) {
 
 dlist_node_t *dlist_later_node(dlist_node_t *node, size_t offset) {
     assert(node != NULL);
-    if (offset == 0) {
-        return node;
-    }
-
-    assert(node->next != NULL);
-    return dlist_later_node(node->next, offset - 1);
+    if (offset == 0) { return node; }
+    return dlist_later_node(node->next, offset - 1); // recurse on remaining offset
 }
 
 dlist_t dlist_init() {
@@ -66,10 +61,11 @@ Object dlist_get_at(dlist_t *list, size_t index) {
 
     pthread_mutex_lock(list->lock);
     dlist_node_t *node = dlist_later_node(list->head, index);
-    Object data = ref(node->data);
+    Object data = node->data; // just gonna lend the object to caller
     pthread_mutex_unlock(list->lock);
 
-    return data;
+    // use ref() if you want to take ownership
+    return data; // the caller borrows the data by default
 }
 
 void dlist_set_at(dlist_t *list, size_t index, Object data) {
@@ -80,7 +76,7 @@ void dlist_set_at(dlist_t *list, size_t index, Object data) {
     pthread_mutex_lock(list->lock);
     dlist_node_t *node = dlist_later_node(list->head, index);
     destroy(node->data);
-    node->data = ref(data);
+    node->data = ref(data); // take ownership
     pthread_mutex_unlock(list->lock);
 }
 
@@ -89,7 +85,8 @@ void dlist_insert_first(dlist_t *list, Object data) {
 
     pthread_mutex_lock(list->lock);
 
-    dlist_node_t *new_node = dlist_node_create(data);
+    // recall that dlist_node_create() takes ownership of data (using ref())
+    dlist_node_t *new_node = dlist_node_create(data); 
     new_node->prev = NULL;
     new_node->next = list->head;
 
@@ -110,6 +107,7 @@ void dlist_insert_last(dlist_t *list, Object data) {
 
     pthread_mutex_lock(list->lock);
 
+    // recall that dlist_node_create() takes ownership of data (using ref())
     dlist_node_t *new_node = dlist_node_create(data);
     new_node->next = NULL;
     new_node->prev = list->tail;
@@ -127,7 +125,7 @@ void dlist_insert_last(dlist_t *list, Object data) {
 }
 
 void dlist_insert_at(dlist_t *list, size_t index, Object data) {
-    if (!list || index > list->size) return;
+    assert(list != NULL && index <= list->size);
 
     pthread_mutex_lock(list->lock);
 
@@ -143,6 +141,7 @@ void dlist_insert_at(dlist_t *list, size_t index, Object data) {
         return;
     }
 
+    // recall that dlist_node_create() takes ownership of data (using ref())
     dlist_node_t *new_node = dlist_node_create(data);
     dlist_node_t *current = dlist_later_node(list->head, index);
 
@@ -160,14 +159,12 @@ void dlist_insert_at(dlist_t *list, size_t index, Object data) {
 }
 
 Object dlist_delete_first(dlist_t *list) {
-    if (!list || !list->head) {
-        return None;
-    }
+    assert(list != NULL && list->size > 0);
 
     pthread_mutex_lock(list->lock);
 
     dlist_node_t *node_to_delete = list->head;
-    Object data = ref(node_to_delete->data);
+    Object data = ref(node_to_delete->data); // take ownership cuz we will destroy the node later
     list->head = node_to_delete->next;
 
     if (list->head) {
@@ -191,7 +188,7 @@ Object dlist_delete_last(dlist_t *list) {
     pthread_mutex_lock(list->lock);
 
     dlist_node_t *node_to_delete = list->tail;
-    Object data = ref(node_to_delete->data);
+    Object data = ref(node_to_delete->data); // take ownership cuz we will destroy the node later
     list->tail = node_to_delete->prev;
 
     if (list->tail) {
@@ -225,7 +222,7 @@ Object dlist_delete_at(dlist_t *list, size_t index) {
     }
 
     dlist_node_t *node_to_delete = dlist_later_node(list->head, index);
-    Object data = ref(node_to_delete->data);
+    Object data = ref(node_to_delete->data); // take ownership cuz we will destroy the node later
 
     if (node_to_delete->prev) {
         node_to_delete->prev->next = node_to_delete->next;
@@ -249,7 +246,7 @@ void dlist_destroy(dlist_t *list) {
     dlist_node_t *current = list->head;
     while (current) {
         dlist_node_t *next = current->next;
-        dlist_node_destroy(current);
+        dlist_node_destroy(current); // releases the ownership of all data
         current = next;
     }
 

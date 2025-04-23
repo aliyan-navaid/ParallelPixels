@@ -26,6 +26,7 @@ static void darray_init_internal(darray_t* arr, size_t initial_capacity) {
 }
 
 darray_t darray_init(size_t initial_capacity) {
+    assert(initial_capacity > 0);
     darray_t arr;
     darray_init_internal(&arr, initial_capacity);
     return arr;
@@ -39,7 +40,7 @@ void darray_destroy(darray_t *arr) {
     }
 
     for (size_t i = 0; i < arr->size; i++) {
-        destroy(arr->arr[i]);
+        destroy(arr->arr[i]); // release each object
     }
 
     free(arr->arr);
@@ -73,15 +74,10 @@ void darray_resize(darray_t *arr, size_t new_size) {
 void darray_reserve(darray_t *arr, size_t new_capacity) {
     pthread_mutex_lock(arr->lock);
 
-    if (new_capacity <= arr->capacity) {
-        return; 
-    }
+    if (new_capacity <= arr->capacity) { return; }
 
     Object *new_arr = (Object *)realloc(arr->arr, new_capacity * sizeof(Object));
-    if (new_arr == NULL) {
-        perror("darray_reserve: Failed to reallocate memory");
-        exit(EXIT_FAILURE);
-    }
+    assert(new_arr != NULL);
 
     arr->arr = new_arr;
     arr->capacity = new_capacity;
@@ -96,7 +92,7 @@ void darray_insert_last(darray_t *arr, Object obj) {
         darray_reserve(arr, arr->capacity == 0 ? 1 : arr->capacity * 2);
     }
 
-    arr->arr[arr->size++] = ref(obj);
+    arr->arr[arr->size++] = ref(obj);   // take ownership
 
     pthread_mutex_unlock(arr->lock);
 }
@@ -114,7 +110,7 @@ void darray_insert_at(darray_t *arr, size_t index, Object obj) {
     memmove(&arr->arr[index + 1], &arr->arr[index], (arr->size - index) * sizeof(Object));
 
     // Insert the object
-    arr->arr[index] = ref(obj);
+    arr->arr[index] = ref(obj);     // take ownership
     arr->size++;
 
     pthread_mutex_unlock(arr->lock);
@@ -125,8 +121,8 @@ Object darray_delete_last(darray_t *arr) {
 
     assert(arr->size > 0);
 
-    Object obj = ref(arr->arr[arr->size - 1]);
-    destroy(arr->arr[--arr->size]);
+    Object obj = arr->arr[arr->size - 1]; // just gonna lend the object to caller
+    arr->arr[--arr->size] = None; // Clear the reference
 
     pthread_mutex_unlock(arr->lock);
     return obj;
@@ -137,8 +133,8 @@ Object darray_delete_at(darray_t *arr, size_t index) {
 
     assert(index < arr->size);
     
-    Object obj = ref(arr->arr[index]);
-    destroy(arr->arr[index]);
+    Object obj = arr->arr[index]; // just gonna lend the object to caller
+    arr->arr[index] = None; // Clear the reference
 
     // Shift elements to left
     memmove(&arr->arr[index], &arr->arr[index + 1], (arr->size - index - 1) * sizeof(Object));
@@ -149,23 +145,23 @@ Object darray_delete_at(darray_t *arr, size_t index) {
     return obj;
 }
 
-Object darray_get(darray_t *arr, size_t index) {
+Object darray_get_at(darray_t *arr, size_t index) {
     pthread_mutex_lock(arr->lock);
 
     assert(index < arr->size);
-    Object obj = ref(arr->arr[index]);
+    Object obj = arr->arr[index]; // just gonna lend the object to caller
 
     pthread_mutex_unlock(arr->lock);
     return obj;
 }
 
-void darray_set(darray_t *arr, size_t index, Object obj) {
+void darray_set_at(darray_t *arr, size_t index, Object obj) {
     pthread_mutex_lock(arr->lock);
 
     assert(index < arr->size);
 
-    destroy(arr->arr[index]);
-    arr->arr[index] = ref(obj);
+    destroy(arr->arr[index]); // release the old object
+    arr->arr[index] = ref(obj); // take ownership
 
     pthread_mutex_unlock(arr->lock);
 }
@@ -174,7 +170,7 @@ void darray_clear(darray_t *arr) {
     pthread_mutex_lock(arr->lock);
 
     for (size_t i = 0; i < arr->size; i++) {
-        destroy(arr->arr[i]);
+        destroy(arr->arr[i]); // release each object
     }
 
     arr->size = 0;

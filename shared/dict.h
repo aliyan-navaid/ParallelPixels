@@ -21,7 +21,7 @@ typedef struct
 
 extern DType kv_pair_type;
 
-DEFINE_TYPE_PROTO(key_value_pair, kv_pair_type, kv_pair_t);
+DEFINE_TYPE_PROTO(key_value_pair, kv_pair_type, kv_pair_t)
 
 typedef struct
 {
@@ -38,6 +38,7 @@ dict_t dict_init(hash_func hash_fn, key_eq key_eq_fn);
 void dict_destroy(dict_t *dict);
 
 void dict_insert(dict_t *dict, Object key, Object value);
+int dict_contains(dict_t *dict, Object key);
 Object dict_get(dict_t *dict, Object key, Object default_value);
 Object dict_delete(dict_t *dict, Object key);
 
