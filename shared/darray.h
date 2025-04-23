@@ -25,8 +25,8 @@ void darray_insert_at(darray_t *arr, size_t index, Object obj);
 Object darray_delete_last(darray_t *arr);
 Object darray_delete_at(darray_t *arr, size_t index);
 
-Object darray_get(darray_t *arr, size_t index);
-void darray_set(darray_t *arr, size_t index, Object obj);
+Object darray_get_at(darray_t *arr, size_t index);
+void darray_set_at(darray_t *arr, size_t index, Object obj);
 
 void darray_resize(darray_t *arr, size_t new_size);
 void darray_reserve(darray_t *arr, size_t new_capacity);

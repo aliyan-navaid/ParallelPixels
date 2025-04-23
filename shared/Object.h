@@ -51,25 +51,25 @@ Object let_none(void);
     TYPE get_##NAME##_v(Object obj) { return *(TYPE *)obj.data; }
 
 // Support for various essential types
-DType i8_type;
+extern DType i8_type;
 DEFINE_TYPE_PROTO(i8, i8_type, int8_t)
-DType i16_type;
+extern DType i16_type;
 DEFINE_TYPE_PROTO(i16, i16_type, int16_t)
-DType i32_type;
+extern DType i32_type;
 DEFINE_TYPE_PROTO(i32, i32_type, int32_t)
-DType i64_type;
+extern DType i64_type;
 DEFINE_TYPE_PROTO(i64, i64_type, int64_t)
-DType f32_type;
+extern DType f32_type;
 DEFINE_TYPE_PROTO(f32, f32_type, float)
-DType f64_type;
+extern DType f64_type;
 DEFINE_TYPE_PROTO(f64, f64_type, double)
-DType u8_type;
+extern DType u8_type;
 DEFINE_TYPE_PROTO(u8, u8_type, uint8_t)
-DType u16_type;
+extern DType u16_type;
 DEFINE_TYPE_PROTO(u16, u16_type, uint16_t)
-DType u32_type;
+extern DType u32_type;
 DEFINE_TYPE_PROTO(u32, u32_type, uint32_t)
-DType u64_type;
+extern DType u64_type;
 DEFINE_TYPE_PROTO(u64, u64_type, uint64_t)
-DType string_type;
+extern DType string_type;
 DEFINE_TYPE_PROTO(string, string_type, const char *)
