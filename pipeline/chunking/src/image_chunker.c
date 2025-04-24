@@ -94,7 +94,8 @@ static int create_chunks_internal(const char *original_filename,
             chunk->original_image_name = strdup(original_filename);
             if (chunk->original_image_name == NULL) {
                 perror("create_chunks_internal: Failed to allocate memory for chunk filename (strdup)");
-                free_image_chunk(chunk);
+                free_image_chunk(chunk); // Safe to call even if pixel_data is NULL
+                chunk = NULL;
                 exit_status = -1;
                 goto cleanup_image;
             }
@@ -104,6 +105,7 @@ static int create_chunks_internal(const char *original_filename,
             if (chunk->pixel_data == NULL) {
                 perror("create_chunks_internal: Failed to allocate memory for chunk pixel data");
                 free_image_chunk(chunk);
+                chunk = NULL;
                 exit_status = -1;
                 goto cleanup_image;
             }
@@ -149,7 +151,8 @@ static int create_chunks_internal(const char *original_filename,
             if (chunk_enqueue(&chunker_filtering_queue, chunk) != 0) {
                 fprintf(stderr, "Thread %lu: create_chunks_internal: Failed to enqueue chunk %d for %s\n",
                         pthread_self(), current_chunk_index, original_filename);
-                free_image_chunk(chunk); 
+                free_image_chunk(chunk);
+                chunk = NULL;
                 exit_status = -1;
                 goto cleanup_image; 
             } else {

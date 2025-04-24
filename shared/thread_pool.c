@@ -26,12 +26,14 @@ void* worker_thread(void* arg) {
             }
         }
 
-        Object task_obj = dlist_delete_first(&pool->task_queue);
+        // delete operation lends the ownership to the caller, 
+        // so no need to use ref() to take ownership here
+        Object task_obj = dlist_delete_first(&pool->task_queue); 
         pthread_mutex_unlock(pool->lock);
         
         task_t *task = get_task(task_obj);
         task->function(task->arg);
-        destroy(task_obj);
+        destroy(task_obj); // this will (should!) call task_destroy() and free the task
     }
 
     return NULL;
@@ -73,10 +75,10 @@ void thread_pool_add_task(thread_pool_t* pool, void (*function)(Object), Object 
     Object task_obj = let_task(NULL);
     task_t* task = get_task(task_obj);
     task->function = function;
-    task->arg = ref(arg);
+    task->arg = ref(arg); // take ownership
 
     pthread_mutex_lock(pool->lock);
-    dlist_insert_last(&pool->task_queue, task_obj);
+    dlist_insert_last(&pool->task_queue, task_obj); // insert takes ownership
     pthread_cond_signal(pool->cond);
     pthread_mutex_unlock(pool->lock);
 
@@ -91,6 +93,7 @@ void thread_pool_destroy(thread_pool_t* pool) {
 
     // this will join all threads because of custom destroy function
     darray_clear(&pool->threads); 
+    // this will free all tasks in the queue (all will be destroyed)
     dlist_destroy(&pool->task_queue);
 
     pthread_mutex_destroy(pool->lock);
@@ -98,5 +101,5 @@ void thread_pool_destroy(thread_pool_t* pool) {
 
     free(pool->lock);
     free(pool->cond);
-    free(pool);
+    // shouldn't use free(pool); since one could define the instance on stack too.
 }
