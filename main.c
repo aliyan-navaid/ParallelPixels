@@ -12,6 +12,8 @@
 #include<directory_monitor.h>
 #include<chunk_threader.h>
 
+#include "reconstruction.h"
+
 image_name_queue_t name_queue;
 chunk_queue_t chunker_filtering_queue, filtering_reconstruction_queue;
 
@@ -162,7 +164,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // create reconstruction threads here.
+    // #################################################################
+    // calls the reconstruction thread which recieves the chunks from the filtering 
+    // stage and reconstructs the image.
+    // The reconstruction thread is not a part of the chunker threads.
+    //
+    init_reconstruction(&filtering_reconstruction_queue);
+    // 
+    // #################################################################
 
     printf("Watcher thread started. Waiting for signal (SIGINT/SIGTERM)...\n");
     while (!stop_flag) 
