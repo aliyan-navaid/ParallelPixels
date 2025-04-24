@@ -33,7 +33,6 @@ void *process_chunk(void *arg) {
     if (chunk_enqueue(&filtering_reconstruction_queue, chunk) != 0) {
         fprintf(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
         free_image_chunk(chunk); // Free the chunk if enqueueing fails
-        free(chunk);
         chunk = NULL;
 >>>>>>> bb90e9f (fix: relocate and update `free_image_chunk()` to skip freeing chunk)
     }

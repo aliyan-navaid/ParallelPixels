@@ -12,7 +12,7 @@ extern volatile sig_atomic_t stop_flag;
 // #######################################
 
 void destroy_image_chunk(void* chunk) {
-    free_image_chunk((image_chunk_t*)chunk);
+    clear_image_chunk((image_chunk_t*)chunk);
 }
 
 DType chunk_dtype = {"image-chunk", sizeof(image_chunk_t), destroy_image_chunk, NULL };
