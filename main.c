@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
     // stage and reconstructs the image.
     // The reconstruction thread is not a part of the chunker threads.
     //
-    init_reconstruction(&filtering_reconstruction_queue);
+    pthread_t* recon_thread = init_reconstruction(&filtering_reconstruction_queue);
     // 
     // #################################################################
 
@@ -195,6 +195,9 @@ int main(int argc, char* argv[]) {
     // join filtering threads here. 
 
     // join reconstructio threads here.
+
+    pthread_join(*recon_thread, NULL);
+    free(recon_thread);
 
     printf("All chunker threads finished.\n");
 

@@ -20,4 +20,4 @@
 extern volatile sig_atomic_t stop_flag;
 
 // initialize reconstruction module in a separate thread.
-void init_reconstruction(chunk_queue_t *processed_queue);
+pthread_t* init_reconstruction(chunk_queue_t *processed_queue);

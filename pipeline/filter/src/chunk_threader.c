@@ -10,25 +10,26 @@
 extern volatile sig_atomic_t stop_flag;
 
 void *process_chunk(void *arg) {
-    while (!stop_flag) {
-        image_chunk_t *chunk = chunk_dequeue(&chunker_filtering_queue);
-        
-        if (chunk == NULL || stop_flag || discarded_images_table_contains(chunk->original_image_name)) {
-            // If the queue is empty, image discarded, wait or check for stop_flag
-            pthread_exit(NULL);
-        }
-        // Process the chunk (e.g., apply greyscale filter)
-        if (greyscale(chunk)) {
-            discarded_images_table_add(chunk->original_image_name);
-        }
+        while (!stop_flag) {
+            image_chunk_t *chunk = chunk_dequeue(&chunker_filtering_queue);
+            
+            if (chunk == NULL || stop_flag || discarded_images_table_contains(chunk->original_image_name)) {
+                // If the queue is empty, image discarded, wait or check for stop_flag
+                pthread_exit(NULL);
+            }
+            // Process the chunk (e.g., apply greyscale filter)
+            if (greyscale(chunk)) {
+                discarded_images_table_add(chunk->original_image_name);
+            }
 
-    // Enqueue the filtered chunk into the next queue
-    if (chunk_enqueue(&filtering_reconstruction_queue, chunk) != 0) {
-        fprintf(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
-        free_image_chunk(chunk); // Free the chunk if enqueueing fails
-        chunk = NULL;
+        // Enqueue the filtered chunk into the next queue
+        if (chunk_enqueue(&filtering_reconstruction_queue, chunk) != 0) {
+            fprintf(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
+            free_image_chunk(chunk); // Free the chunk if enqueueing fails
+            chunk = NULL;
+        }
+        return NULL;
     }
-    return NULL;
 }
 /*
 void assign_threads_to_chunk(void) {
