@@ -7,6 +7,41 @@
 
 extern volatile sig_atomic_t stop_flag;
 
+// #######################################
+// # Add Object Interface for image_chunk_t
+// #######################################
+
+void destroy_image_chunk(void* chunk) {
+    clear_image_chunk((image_chunk_t*)chunk);
+}
+
+DType chunk_dtype = {"image-chunk", sizeof(image_chunk_t), destroy_image_chunk, NULL };
+
+DEFINE_TYPE(image_chunk, chunk_dtype, image_chunk_t)
+
+// #######################################
+// # To free Chunks
+// #######################################
+
+void clear_image_chunk(image_chunk_t *chunk) {
+    if (chunk == NULL)
+        return;
+
+    free(chunk->original_image_name);
+    free(chunk->pixel_data);
+}
+
+void free_image_chunk(image_chunk_t *chunk) {
+    if (chunk == NULL)
+        return;
+
+    clear_image_chunk(chunk);
+    free(chunk);
+}
+
+// #######################################
+// # Chunk Queue Implementation
+// #######################################
 int chunk_queue_init(chunk_queue_t* q) {
     if (q == NULL) 
         return EINVAL; 

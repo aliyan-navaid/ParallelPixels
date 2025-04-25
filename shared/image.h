@@ -1,10 +1,16 @@
 #pragma once
 
-#include<stddef.h>
-#include<pthread.h>
+#include<stddef.h> // For size_t
+#include<stdint.h>
+#include<pthread.h> // For pthread types
 #include<uthash.h>
 #include<stdbool.h>
 
+#include "Object.h" // For Object type
+
+/**
+ * @brief Represents the processing state of an image chunk.
+ */
 typedef enum {
     CHUNK_STATUS_CREATED,
     CHUNK_STATUS_FILTERED,
@@ -31,6 +37,19 @@ typedef struct chunk_queue_node {
     struct chunk_queue_node* next;
     image_chunk_t* chunk;
 } chunk_queue_node_t;
+
+extern DType chunk_dtype; // Declare the DType for image_chunk_t
+DEFINE_TYPE_PROTO(image_chunk, chunk_dtype, image_chunk_t)
+
+void clear_image_chunk(image_chunk_t* chunk);
+void free_image_chunk(image_chunk_t *chunk);
+
+typedef struct {
+    unsigned char *pixel_data;
+
+    size_t width, height;
+    uint32_t channels;
+} image_t;
 
 typedef struct {
     chunk_queue_node_t *head;
