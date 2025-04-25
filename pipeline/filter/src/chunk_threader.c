@@ -22,19 +22,11 @@ void *process_chunk(void *arg) {
             discarded_images_table_add(chunk->original_image_name);
         }
 
-<<<<<<< HEAD
-        // Enqueue the filtered chunk into the next queue
-        if (chunk_enqueue(&filtering_reconstruction_queue, chunk) != 0) {
-            fprintf(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
-            free_image_chunk(chunk); // Free the chunk if enqueueing fails
-        }
-=======
     // Enqueue the filtered chunk into the next queue
     if (chunk_enqueue(&filtering_reconstruction_queue, chunk) != 0) {
         fprintf(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
         free_image_chunk(chunk); // Free the chunk if enqueueing fails
         chunk = NULL;
->>>>>>> bb90e9f (fix: relocate and update `free_image_chunk()` to skip freeing chunk)
     }
     return NULL;
 }
