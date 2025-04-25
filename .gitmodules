@@ -1,3 +1,3 @@
-[submodule "vendors/cityhash"]
-	path = vendors/cityhash
-	url = git@github.com:google/cityhash.git
+[submodule "vendors/xxHash"]
+	path = vendors/xxHash
+	url = git@github.com:Cyan4973/xxHash.git

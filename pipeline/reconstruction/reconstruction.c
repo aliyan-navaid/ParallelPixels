@@ -1,10 +1,5 @@
 #include "reconstruction.h"
 
-void init_reconstruction(chunk_queue_t *processed_queue) {
-    pthread_t thread;
-    pthread_create(&thread, NULL, reconstruction_thread, processed_queue);
-    pthread_detach(thread);
-}
 /*
 You should read `dict.h` before going through this file. To brief, the `dict_t` is a hash table that maps keys to values, where both are the instnaces of `Object`. 
 
@@ -20,7 +15,7 @@ static inline size_t hash_string(Object key) {
     assert(str != NULL);
     
     // recall that the function "borrows" the Object, so no need to `destroy` it
-    return CityHash64(str, len(str));
+    return XXH64(str, strlen(str), 0); // 0 is the seed, you can change it if needed
 }
 
 static inline int compare_strings(Object a, Object b) {
@@ -69,6 +64,32 @@ static void shutdown_and_free_threadpool(thread_pool_t* pool) {
     free(pool);
 }
 
+
+static void insert_chunk(dict_t* dict, Object img_name, Object chunk_obj) {
+    if (!dict_contains(dict, img_name)) {
+        dlist_t dlist = dlist_init();
+        Object value = let_dlist(&dlist);
+        
+        dict_insert(dict, img_name, value); // dict takes the ownership of the object. 
+        destroy(value); // release the reference count
+    }
+    
+    Object value = dict_get(dict, img_name, None); // we borrow the object here. no need to destroy
+    assert(!is_none(value));
+
+    dlist_t *dlist = get_dlist(value);
+    assert(dlist != NULL);
+
+    dlist_insert_last(dlist, chunk_obj); // dlist takes the ownership of the object
+}
+
+static void remove_image(dict_t* dict, Object img_name) {
+    if (dict_contains(dict, img_name)) {
+        Object value = dict_delete(dict, img_name); // it transfers the ownership
+        destroy(value); // free the dlist 
+    }
+}
+
 static bool handle_corrupted_chunk(dict_t *dict, image_chunk_t *chunk) {
     if (!chunk) { return true; }
 
@@ -83,7 +104,7 @@ static bool handle_corrupted_chunk(dict_t *dict, image_chunk_t *chunk) {
 }
 
 static bool enough_chunks(dict_t* dict, Object img_name) {
-    Object value = dict_get(&dict, img_name, None); // we borrow the value
+    Object value = dict_get(dict, img_name, None); // we borrow the value
 
     if (is_none(value)) { 
         return 0; 
@@ -105,36 +126,10 @@ static bool enough_chunks(dict_t* dict, Object img_name) {
 static void try_schedule_reconstruction(dict_t* dict, thread_pool_t* pool, Object img_name) {
     if (!enough_chunks(dict, img_name)) { return; }
 
-    Object dlist_obj = dict_delete(&dict, img_name); // we get the ownership 
+    Object dlist_obj = dict_delete(dict, img_name); // we get the ownership 
     thread_pool_add_task(pool, task_function, dlist_obj); // pool takes the ownership of dlist_obj
     destroy(dlist_obj); // release the count
 }
-
-static void insert_chunk(dict_t* dict, Object img_name, Object chunk_obj) {
-    if (!dict_contains(dict, img_name)) {
-        dlist_t dlist = dlist_init();
-        Object value = let_dlist(&dlist);
-        
-        dict_insert(&dict, img_name, value); // dict takes the ownership of the object. 
-        destroy(value); // release the reference count
-    }
-    
-    Object value = dict_get(&dict, img_name, None); // we borrow the object here. no need to destroy
-    assert(!is_none(value));
-
-    dlist_t *dlist = get_dlist(value);
-    assert(dlist != NULL);
-
-    dlist_insert(dlist, chunk_obj); // dlist takes the ownership of the object
-}
-
-static void remove_image(dict_t* dict, Object img_name) {
-    if (dict_contains(dict, img_name)) {
-        Object value = dict_delete(&dict, img_name); // it transfers the ownership
-        destroy(value); // free the dlist 
-    }
-}
-
 
 void *reconstruction_thread(void *arg) {
     chunk_queue_t *processed_queue = (chunk_queue_t *)arg;
@@ -162,5 +157,12 @@ void *reconstruction_thread(void *arg) {
     }
 
     shutdown_and_free_threadpool(pool);
+    dict_destroy(&dict); // free the dictionary
     return NULL;
+}
+
+pthread_t* init_reconstruction(chunk_queue_t *processed_queue) {
+    pthread_t* thread = (pthread_t*)malloc(sizeof(pthread_t));
+    pthread_create(thread, NULL, reconstruction_thread, processed_queue);
+    return thread;
 }

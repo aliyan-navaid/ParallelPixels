@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <city.h>
+#include <xxhash.h>
 #include <pthread.h>
 #include <signal.h>
 #include <assert.h>
@@ -17,7 +17,7 @@
 
 #define RECONSTRUCTION_THREADS 4
 
-extern sig_atomic_t stop_flag;
+extern volatile sig_atomic_t stop_flag;
 
 // initialize reconstruction module in a separate thread.
-void init_reconstruction(chunk_queue_t *processed_queue);
+pthread_t* init_reconstruction(chunk_queue_t *processed_queue);
