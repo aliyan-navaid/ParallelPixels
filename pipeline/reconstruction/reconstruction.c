@@ -20,7 +20,7 @@ static inline size_t hash_string(Object key) {
     assert(str != NULL);
     
     // recall that the function "borrows" the Object, so no need to `destroy` it
-    return CityHash64(str, len(str));
+    return XXH64(str, strlen(str), 0); // 0 is the seed, you can change it if needed
 }
 
 static inline int compare_strings(Object a, Object b) {
