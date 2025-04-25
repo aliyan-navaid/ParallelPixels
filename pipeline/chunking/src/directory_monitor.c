@@ -18,21 +18,14 @@ void *read_images_from_directory(void *arg) {
     struct dirent *entry;
     DIR *dir = NULL;
 
-    // --- Initial Scan ---
-    printf("Thread %lu: Performing initial scan of directory: %s\n", pthread_self(), directoryPath);
     dir = opendir(directoryPath);
     if (dir == NULL) {
-        char err_msg[512];
-        snprintf(err_msg, sizeof(err_msg), "Thread %lu: Unable to open directory for initial scan (%s)", pthread_self(), directoryPath);
-        perror(err_msg);
+        perror("read_images_from_directory - Cannot open directory");
         return NULL; 
     }
 
     while ((entry = readdir(dir)) != NULL) {
-        if (stop_flag) {
-            printf("Thread %lu: Stop flag detected during initial scan.\n", pthread_self());
-            break; 
-        }
+        if (stop_flag) break; 
 
         bool should_process = false;
         char current_filename[256];
@@ -50,37 +43,26 @@ void *read_images_from_directory(void *arg) {
             char imagePath[1024];
             snprintf(imagePath, sizeof(imagePath), "%s/%s", directoryPath, current_filename);
             if (enqueue_image_name(&name_queue, imagePath) != 0) 
-                fprintf(stderr, "Thread %lu: Failed to enqueue image %s\n", pthread_self(), imagePath);
+                fprintf(stderr, "read_images_from_directory: Image name enqueue failed");
         }
     }
 
     closedir(dir);
     dir = NULL; 
-    if (stop_flag) {
-        printf("Thread %lu: Stop flag detected after initial scan.\n", pthread_self());
-        return NULL; 
-    }
+    if (stop_flag) return NULL; 
 
-    printf("Thread %lu: Initial scan complete. Monitoring...\n", pthread_self());
-
-    // --- Monitoring Loop ---
     while (!stop_flag) { 
         dir = opendir(directoryPath);
         if (dir == NULL) {
-            char err_msg[512];
-            snprintf(err_msg, sizeof(err_msg), "Thread %lu: Unable to open directory for monitoring (%s)", pthread_self(), directoryPath);
-            perror(err_msg);
+            perror("read_images_from_directory - Cannot open directory for monitoring");
             if (stop_flag) break;
             sleep(5); 
             continue; 
         }
 
         while ((entry = readdir(dir)) != NULL) {
-            if (stop_flag) {
-                printf("Thread %lu: Stop flag detected during monitoring scan.\n", pthread_self());
-                break; 
-            }
-
+            if (stop_flag) break; 
+            
             bool should_process = false;
             char current_filename[256];
             strncpy(current_filename, entry->d_name, sizeof(current_filename) - 1);
@@ -97,24 +79,19 @@ void *read_images_from_directory(void *arg) {
                 char imagePath[1024];
                 snprintf(imagePath, sizeof(imagePath), "%s/%s", directoryPath, current_filename);
                 if (enqueue_image_name(&name_queue, imagePath) != 0) 
-                    fprintf(stderr, "Thread %lu: Failed to enqueue image %s\n", pthread_self(), imagePath);
+                    fprintf(stderr, "read_images_from_directory: Cannot enqueue image name");
             }
         }
         
         closedir(dir);
         dir = NULL; 
 
-        if (stop_flag) {
-            printf("Thread %lu: Stop flag detected after monitoring scan.\n", pthread_self());
-            break;
-        }
+        if (stop_flag) break;
 
         sleep(5); 
     }
 
-    if (dir != NULL)
-        closedir(dir);
+    if (dir != NULL) closedir(dir);
 
-    printf("Thread %lu: Exiting gracefully.\n", pthread_self());
     return NULL;
 }

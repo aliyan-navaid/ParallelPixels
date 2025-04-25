@@ -44,6 +44,7 @@ int chunk_enqueue(chunk_queue_t* q, image_chunk_t* c) {
     pthread_mutex_lock(&q->lock);
 
     if (q->tail == NULL) { 
+        // very rare
         if (q->head != NULL) {
             fprintf(stderr, "chunk_enqueue: Queue inconsistency detected (tail is NULL, head is not)\n");
             pthread_mutex_unlock(&q->lock);
