@@ -26,6 +26,7 @@ add_executable(main
     shared/dlist.c
     shared/dict.c
     shared/image.c
+    shared/thread_pool.c
 
     pipeline/reconstruction/image_unchunk.c
     pipeline/reconstruction/reconstruction.c
