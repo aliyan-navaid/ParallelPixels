@@ -203,6 +203,9 @@ int main(int argc, char* argv[]) {
     pthread_join(*recon_thread, NULL);
     free(recon_thread);
 
+    pthread_join(*recon_thread, NULL);
+    free(recon_thread);
+
     printf("All chunker threads finished.\n");
 
     printf("Cleaning up resources...\n");
