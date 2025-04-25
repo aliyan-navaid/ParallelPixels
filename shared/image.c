@@ -99,7 +99,7 @@ int chunk_enqueue(chunk_queue_t* q, image_chunk_t* c) {
     pthread_cond_signal(&q->cond_not_empty);
     pthread_mutex_unlock(&q->lock);
 
-    printf("Chunk enqueued successfully (ID: %d)\n", c->chunk_id); 
+    //printf("Chunk enqueued successfully (ID: %d)\n", c->chunk_id); 
 
     return 0;
 }
@@ -129,7 +129,7 @@ image_chunk_t* chunk_dequeue(chunk_queue_t* q) {
     pthread_mutex_unlock(&q->lock);
     free(dequeue_node); 
 
-    printf("Chunk dequeued successfully (ID: %d)\n", chunk->chunk_id); 
+    //printf("Chunk dequeued successfully (ID: %d)\n", chunk->chunk_id); 
 
     return chunk;
 }

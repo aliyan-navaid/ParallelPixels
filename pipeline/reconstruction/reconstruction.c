@@ -43,15 +43,16 @@ void task_function(Object obj) {
 
     image_t image = image_from_chunks(chunks_list);
 
+    const char* path = "../filtered_images";
     const char* org_name = get_image_chunk(chunks_list->head->data)->original_image_name;
     const char* suffix = generate_suffix(NULL, 0);
-    const char* output_path = result_path(NULL, org_name, suffix);
+    const char* output_path = result_path(path, org_name, suffix);
 
     write_image(image, output_path);
     cleanup_image(&image);
 
     free((char*)output_path);
-    free((char*)suffix);
+    //free((char*)suffix);
 }
 
 static thread_pool_t* init_threadpool() {
@@ -142,7 +143,7 @@ void *reconstruction_thread(void *arg) {
 
     while (!stop_flag) {
         chunk = chunk_dequeue(processed_queue);
-
+        
         if (handle_corrupted_chunk(&dict, chunk)) { continue; }
 
         Object img_name = let_string_v(chunk->original_image_name);

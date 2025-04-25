@@ -7,7 +7,7 @@ import uuid
 import threading
 
 # --- Configuration ---
-NUM_IMAGES = 1
+NUM_IMAGES = 100
 IMAGE_WIDTH = 1920
 IMAGE_HEIGHT = 1080
 IMAGE_DIR = "./images" # Download images to the stream directory
