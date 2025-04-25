@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
     printf("Waiting for filtering threads to finish...\n");
     for (size_t i = 0; i < num_filter_threads; i++) {
         pthread_join(filter_threads[i], NULL);
-        printf("Chunker thread %zu finished.\n", i);
+        printf("Filtering thread %zu finished.\n", i);
     }   
 
     // join reconstructio threads here.

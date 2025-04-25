@@ -5,7 +5,7 @@
 extern chunk_queue_t filtering_reconstruction_queue;
 
 int greyscale(image_chunk_t* chunk) {
-    
+
     if (!chunk) {
         fprintf(stderr, "Error: chunk is NULL\n");
         return EXIT_FAILURE;
@@ -23,10 +23,12 @@ int greyscale(image_chunk_t* chunk) {
     for (int i=0; i<width*height*channels; i+=channels) {
         unsigned char* pixel = chunk->pixel_data;
         unsigned char gray = (unsigned char)(0.299 * pixel[i+0] + 0.587 * pixel[i+1] + 0.114 * pixel[i+2]); // assuming RGB
-        pixel[0] = gray;
-        pixel[1] = gray;
-        pixel[2] = gray;
+        pixel[i + 0] = gray;
+        pixel[i + 1] = gray;
+        pixel[i + 2] = gray;
     }
+
+    return EXIT_SUCCESS;
 }
 
 int directional_blur(image_chunk_t* chunk, int line_size) {
@@ -62,11 +64,13 @@ int directional_blur(image_chunk_t* chunk, int line_size) {
         unsigned char g = total_g/line_size;
         
         for (int j=0; j<line_size*channels; j+=channels) {
-            pixel[i+j+0] =r;
+            pixel[i+j+0] = r;
             pixel[i+j+1] = g;
             pixel[i+j+2] = b;
         }
     }
+
+    return EXIT_SUCCESS;
 }
 
 int posterize(image_chunk_t* chunk, int levels) {
@@ -91,4 +95,6 @@ int posterize(image_chunk_t* chunk, int levels) {
             pixel[i + c] = (pixel[i + c] / step) * step;
         }
     }
+
+    return EXIT_SUCCESS;
 }
