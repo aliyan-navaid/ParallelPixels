@@ -4,16 +4,16 @@
 
 extern chunk_queue_t filtering_reconstruction_queue;
 
-void greyscale(image_chunk_t* chunk) {
+int greyscale(image_chunk_t* chunk) {
     
     if (!chunk) {
         fprintf(stderr, "Error: chunk is NULL\n");
-        return;
+        return EXIT_FAILURE;
     }
 
     if (!chunk->pixel_data) {
         fprintf(stderr, "Error: pixel_data is NULL\n");
-        return;
+        return EXIT_FAILURE;
     }
 
     int width = chunk->width; 
@@ -29,16 +29,16 @@ void greyscale(image_chunk_t* chunk) {
     }
 }
 
-void directional_blur(image_chunk_t* chunk, int line_size) {
+int directional_blur(image_chunk_t* chunk, int line_size) {
     
     if (!chunk) {
         fprintf(stderr, "Error: chunk is NULL\n");
-        return;
+        return EXIT_FAILURE;
     }
 
     if (!chunk->pixel_data) {
         fprintf(stderr, "Error: pixel_data is NULL\n");
-        return;
+        return EXIT_FAILURE;
     }
 
     int width = chunk->width; 
@@ -69,14 +69,14 @@ void directional_blur(image_chunk_t* chunk, int line_size) {
     }
 }
 
-void posterize(image_chunk_t* chunk, int levels) {
+int posterize(image_chunk_t* chunk, int levels) {
     if (!chunk) {
         fprintf(stderr, "Error: chunk is NULL\n");
-        return;
+        return EXIT_FAILURE;
     }
     if (!chunk->pixel_data) {
         fprintf(stderr, "Error: pixel_data is NULL\n");
-        return;
+        return EXIT_FAILURE;
     }
 
     int width = chunk->width;
