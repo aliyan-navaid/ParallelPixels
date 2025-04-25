@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-<<<<<<< HEAD
 project(ParallelPixels C)
-=======
-project(ParallelPipeline C)
->>>>>>> 6dbefd2 (feat: Modify CMakeLists.txt)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
@@ -33,22 +29,15 @@ add_executable(main
     pipeline/chunking/src/image_chunker.c
     pipeline/filter/src/chunk_threader.c
     pipeline/filter/src/filter.c
-<<<<<<< HEAD
     pipeline/chunking/src/image_queue.c 
-=======
-    pipeline/chunking/src/image_queue.c
->>>>>>> 6dbefd2 (feat: Modify CMakeLists.txt)
 
     shared/Object.c
     shared/darrray.c
     shared/dlist.c
     shared/dict.c
     shared/image.c
-<<<<<<< HEAD
-=======
 
     pipeline/reconstruction/image_unchunk.c
->>>>>>> 6dbefd2 (feat: Modify CMakeLists.txt)
 )
 
 target_include_directories(main PRIVATE
@@ -61,25 +50,7 @@ target_include_directories(main PRIVATE
     ${cityhash_SOURCE_DIR}
 )
 
-<<<<<<< HEAD
 target_link_libraries(main PRIVATE
     Threads::Threads
     ${MATH_LIBRARY}
 )
-=======
-# Link against threads, math, and CityHash
-target_link_libraries(main PRIVATE
-    Threads::Threads
-    ${MATH_LIBRARY}
-    cityhash
-)
-
-# Since CityHash is in C++, force C++ linker for the C-based target
-set_target_properties(main PROPERTIES LINKER_LANGUAGE CXX)
-
-# --- Optional: Debugging ---
-# Add -g flag for debugging builds across all targets
-# Use cmake .. -DCMAKE_BUILD_TYPE=Debug for a cleaner way
-# set(CMAKE_C_FLAGS_DEBUG "-g")
-# set(CMAKE_CXX_FLAGS_DEBUG "-g")
->>>>>>> 6dbefd2 (feat: Modify CMakeLists.txt)
