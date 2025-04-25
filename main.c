@@ -18,7 +18,7 @@ chunk_queue_t chunker_filtering_queue, filtering_reconstruction_queue;
 volatile sig_atomic_t stop_flag = 0;
 
 int Initialization(void) {
-    if (image_name_queue_init(&name_queue) != 0) {y
+    if (image_name_queue_init(&name_queue) != 0) {
         fprintf(stderr, "Failed to initialize name queue.\n");
         return EXIT_FAILURE;
     }
