@@ -138,7 +138,29 @@ int main(int argc, char* argv[]) {
     
     // Aliyan TODO: instead of a function call, create threads here (Use thread pool).
     // Join them later
-    assign_threads_to_chunk();
+    unsigned int num_filter_threads = num_chunker_threads;
+    pthread_t *filter_threads = (pthread_t *) malloc(num_filter_threads * sizeof(pthread_t));
+    printf("Starting %zu image processing threads...\n", num_filter_threads);
+    for (size_t i = 0; i < num_filter_threads; i++) {
+        if (pthread_create(&filter_threads[i], NULL, process_chunk, NULL) != 0) {
+            perror("Failed to create a filter thread");
+
+            stop_flag = 1; 
+
+            broadcast_image_name_queue(&name_queue);
+            broadcast_chunk_queue(&chunker_filtering_queue);
+            broadcast_chunk_queue(&filtering_reconstruction_queue);
+
+            for (size_t j = 0; j < i; j++) 
+                pthread_join(filter_threads[j], NULL);
+            for (size_t j = 0; j < num_chunker_threads; j++) 
+                pthread_join(chunker_threads[j], NULL);
+            
+            pthread_join(watcher_thread, NULL);
+            exit_status = EXIT_FAILURE;
+            goto Cleanup;
+        }
+    }
 
     // create reconstruction threads here.
 
