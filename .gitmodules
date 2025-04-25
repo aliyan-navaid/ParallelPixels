@@ -1,3 +1,0 @@
-[submodule "vendors/cityhash"]
-	path = vendors/cityhash
-	url = git@github.com:google/cityhash.git
