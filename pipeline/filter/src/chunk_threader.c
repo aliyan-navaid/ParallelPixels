@@ -10,21 +10,21 @@
 extern volatile sig_atomic_t stop_flag;
 
 void *process_chunk(void *arg) {
-
-    arg = NULL;
-    while (!stop_flag) {
-        image_chunk_t *chunk = chunk_dequeue(&chunker_filtering_queue);
-        
-        if (chunk == NULL || stop_flag || discarded_images_table_contains(chunk->original_image_name)) {
-            // If the queue is empty, image discarded, wait or check for stop_flag
-            continue;
-        }
-
-        // Process the chunk (e.g., apply greyscale filter)
-        if (greyscale(chunk)) {
-            if (chunk != NULL) discarded_images_table_add(chunk->original_image_name);
-            continue;
-        }
+        while (!stop_flag) {
+            image_chunk_t *chunk = chunk_dequeue(&chunker_filtering_queue);
+            
+            /*
+            if (chunk == NULL || stop_flag || discarded_images_table_contains(chunk->original_image_name)) {
+                // If the queue is empty, image discarded, wait or check for stop_flag
+                printf("Skipping greyscale\n");
+                continue;
+            }
+            */
+            // Process the chunk (e.g., apply greyscale filter)
+            printf("just above greyscale\n");
+            if (directional_blur(chunk, 50)) {
+                discarded_images_table_add(chunk->original_image_name);
+            }
 
         // Enqueue the filtered chunk into the next queue
 
@@ -34,7 +34,6 @@ void *process_chunk(void *arg) {
             chunk = NULL;
         }
     }
-
     return NULL;
 }
 /*
