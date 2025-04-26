@@ -23,9 +23,9 @@ int greyscale(image_chunk_t* chunk) {
     for (int i=0; i<width*height*channels; i+=channels) {
         unsigned char* pixel = chunk->pixel_data;
         unsigned char gray = (unsigned char)(0.299 * pixel[i+0] + 0.587 * pixel[i+1] + 0.114 * pixel[i+2]); // assuming RGB
-        pixel[i + 0] = gray;
-        pixel[i + 1] = gray;
-        pixel[i + 2] = gray;
+        pixel[i+0] = gray;
+        pixel[i+1] = gray;
+        pixel[i+2] = gray;
     }
 
     return EXIT_SUCCESS;
