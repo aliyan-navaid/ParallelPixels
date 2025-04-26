@@ -8,9 +8,6 @@
 
 #include "Object.h" // For Object type
 
-/**
- * @brief Represents the processing state of an image chunk.
- */
 typedef enum {
     CHUNK_STATUS_CREATED,
     CHUNK_STATUS_FILTERED,
