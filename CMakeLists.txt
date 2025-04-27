@@ -3,9 +3,13 @@ project(ParallelPixels C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
-set(CMAKE_BUILD_TYPE Debug)
 
-# Find pthreads (likely needed for threading within the single process)
+# Default to Debug if no build type is specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
+
+# Find pthreads and math library
 find_package(Threads REQUIRED)
 find_library(MATH_LIBRARY m)
 
@@ -32,22 +36,30 @@ add_executable(ppxl
     pipeline/reconstruction/reconstruction.c
 )
 
+# Static library (xxHash)
 add_library(xxhash STATIC ${CMAKE_CURRENT_SOURCE_DIR}/vendors/xxHash/xxhash.c)
 
+# Include directories
 target_include_directories(ppxl PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared
     ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/chunking/include
     ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/filter/include
     ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/reconstruction
-
     ${CMAKE_CURRENT_SOURCE_DIR}/vendors/xxHash
 )
 
+# Link libraries
 target_link_libraries(ppxl PRIVATE
     xxhash
     Threads::Threads
     ${MATH_LIBRARY}
 )
 
-# Optional: For extra compile options (warnings, debugging)
-# target_compile_options(main PRIVATE -Wall -Wextra -pedantic)
+# Add Debug and Release macros
+target_compile_definitions(ppxl PRIVATE
+    $<$<CONFIG:Debug>:DEBUG_BUILD>
+    $<$<CONFIG:Release>:RELEASE_BUILD>
+)
+
+# Optional: Compiler warnings
+# target_compile_options(ppxl PRIVATE -Wall -Wextra -pedantic)
