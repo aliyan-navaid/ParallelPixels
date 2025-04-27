@@ -19,14 +19,12 @@ void *process_chunk(void *arg) {
             continue;
         }
         
-
-        if (greyscale(chunk)) {
+        if (directional_blur(chunk, 100)) {
             discarded_images_table_add(chunk->original_image_name);
             continue;
         }
-
+        
         // Enqueue the filtered chunk into the next queue
-
         if (chunk_enqueue(&filtering_reconstruction_queue, chunk) != 0) {
             fprintf(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
             free_image_chunk(chunk); // Free the chunk if enqueueing fails
