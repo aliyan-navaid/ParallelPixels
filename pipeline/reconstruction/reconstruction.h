@@ -18,6 +18,7 @@
 #define RECONSTRUCTION_THREADS 4
 
 extern volatile sig_atomic_t stop_flag;
+extern const char* out_directory;
 
 // initialize reconstruction module in a separate thread.
 pthread_t* init_reconstruction(chunk_queue_t *processed_queue);

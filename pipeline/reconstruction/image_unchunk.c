@@ -1,10 +1,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
-#include <stb_image_write.h>
 #include "image_unchunk.h"
+#include <stb_image_write.h>
 
-const char *generate_suffix(const char **effects, int num_effects) {
-    return "processed"; // simple for now
+char *generate_suffix(const char **effects, int num_effects) {
+    return strdup("processed"); // simple for now
 }
 
 /*
@@ -105,9 +105,11 @@ char *result_path(const char *output_directory, const char *original_path, const
 
     char* extension = get_extension(original_path);
 
-    char *new_path = (char *)malloc(strlen(output_dir) + 1 + strlen(output_filename) + 1 + strlen(suffix) + 1 + strlen(extension));
+    char *new_path = (char *)malloc(strlen(output_dir) + 1 + strlen(output_filename) + 1 + strlen(suffix) + 1 + strlen(extension) + 1);
     
     sprintf(new_path, "%s/%s_%s.%s", output_dir, output_filename, suffix, extension);
+    // add null terminator
+    new_path[strlen(output_dir) + 1 + strlen(output_filename) + 1 + strlen(suffix) + 1 + strlen(extension)] = '\0';
 
     free(output_filename);
     free(output_dir);
@@ -125,7 +127,7 @@ static inline image_t create_empty_image(int width, int height, int channels) {
     image.height = height;
     image.channels = channels;
 
-    image.pixel_data = (unsigned char *)malloc(width * height * channels);
+    image.pixel_data = (unsigned char *)malloc(sizeof(unsigned char) * width * height * channels);
     memset(image.pixel_data, 0, width * height * channels);
 
     return image;
@@ -142,7 +144,8 @@ void write_image(image_t image, const char *path) {
     // write the image to a file
     assert(path != NULL);
 
-    int result = stbi_write_png(path, image.width, image.height, image.channels, image.pixel_data, image.width * image.channels);
+    int result = stbi_write_jpg(path, image.width, image.height, image.channels, image.pixel_data, 100);
+    // int result = stbi_write_png(path, image.width, image.height, image.channels, image.pixel_data, image.width * image.channels);
     assert(result != 0);
 }
 

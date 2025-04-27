@@ -7,7 +7,11 @@
 #include <chunk_threader.h>
 #include <filter.h>
 
+#include "macros.h"
+
 extern volatile sig_atomic_t stop_flag;
+extern const char* out_directory;
+extern const char* effects;
 
 void *process_chunk(void *arg) {
     while (!stop_flag) {
@@ -19,16 +23,32 @@ void *process_chunk(void *arg) {
             continue;
         }
         
-
-        if (greyscale(chunk)) {
-            discarded_images_table_add(chunk->original_image_name);
-            continue;
+        if (!effects) {
+            stop_flag =1;
+            continue;;
+        }
+        
+        int filter_result = EXIT_FAILURE;
+        if (strcmp(effects, "greyscale") == 0) {
+            filter_result = greyscale(chunk);
+        } else if (strcmp(effects, "posterize") == 0) {
+            filter_result = posterize(chunk, 4);
+        } else if (strcmp(effects, "directional_blur") == 0) {
+            filter_result = directional_blur(chunk, 50);
+        } else {
+            FPRINTF(stderr, "Unknown effect: %s\n", effects);
+            stop_flag = 1;
+            continue;;
         }
 
+        if (filter_result != EXIT_SUCCESS) {
+            stop_flag = 1;
+            continue;;
+        }
+        
         // Enqueue the filtered chunk into the next queue
-
         if (chunk_enqueue(&filtering_reconstruction_queue, chunk) != 0) {
-            fprintf(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
+            FPRINTF(stderr, "Error: Failed to enqueue filtered chunk (ID: %d).\n", chunk->chunk_id);
             free_image_chunk(chunk); // Free the chunk if enqueueing fails
             chunk = NULL;
         }

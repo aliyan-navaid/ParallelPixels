@@ -4,6 +4,8 @@
 #include<dirent.h>
 #include<errno.h>
 #include<stdio.h>
+#include<stdbool.h>
+#include <sys/stat.h>
 
 #include<image.h>
 #include<image_queue.h>
@@ -13,33 +15,85 @@
 #include<chunk_threader.h>
 
 #include "reconstruction.h"
+#include "macros.h"
 
 image_name_queue_t name_queue;
 chunk_queue_t chunker_filtering_queue, filtering_reconstruction_queue;
+
+const char* input_directory = "../images";
+const char* out_directory = ".";
+const char* effects = NULL;
+
+bool is_directory(const char* path) {
+    struct stat path_stat;
+    if (stat(path, &path_stat) != 0) {
+        perror("stat failed");
+        return false;
+    }
+    return S_ISDIR(path_stat.st_mode);
+}
+
+void arg_parse(int argc, char* argv[]) {
+    if (argc < 2) {
+        FPRINTF(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
+        exit(EXIT_FAILURE);
+    }
+
+    input_directory = argv[1];
+
+    for (int i = 2; i < argc; i++) {
+        if (strcmp(argv[i], "-e") == 0 && i + 1 < argc) {
+            effects = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
+            out_directory = argv[i + 1];
+            i++;
+        } else {
+            FPRINTF(stderr, "Unknown argument: %s\n", argv[i]);
+            FPRINTF(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (!is_directory(input_directory)) {
+        FPRINTF(stderr, "Error: Input directory '%s' does not exist or is not a directory.\n", input_directory);
+        exit(EXIT_FAILURE);
+    }
+
+    if (!is_directory(out_directory)) {
+        FPRINTF(stderr, "Error: Output directory '%s' does not exist or is not a directory.\n", out_directory);
+        exit(EXIT_FAILURE);
+    }
+
+    if (effects == NULL) {
+        FPRINTF(stderr, "Error: Effects not specified. Use -e <effects> to specify effects.\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
 volatile sig_atomic_t stop_flag = 0;
 
 int Initialization(void) {
     if (image_name_queue_init(&name_queue) != 0) {
-        fprintf(stderr, "Failed to initialize name queue.\n");
+        FPRINTF(stderr, "Failed to initialize name queue.\n");
         return EXIT_FAILURE;
     }
 
     if (chunk_queue_init(&chunker_filtering_queue) != 0) {
-        fprintf(stderr, "Failed to initialize filtering->reconstruction queue.\n");
+        FPRINTF(stderr, "Failed to initialize filtering->reconstruction queue.\n");
         image_name_queue_destroy(&name_queue); 
         return EXIT_FAILURE;
     }
 
     if (chunk_queue_init(&filtering_reconstruction_queue) != 0) {
-        fprintf(stderr, "Failed to initialize chunker->filtering queue.\n");
+        FPRINTF(stderr, "Failed to initialize chunker->filtering queue.\n");
         image_name_queue_destroy(&name_queue); 
         chunk_queue_destroy(&chunker_filtering_queue);
         return EXIT_FAILURE;
     }
 
     if (discarded_images_init() != 0) {
-        fprintf(stderr, "Failed to initialize discarded images table.\n");
+        FPRINTF(stderr, "Failed to initialize discarded images table.\n");
         image_name_queue_destroy(&name_queue);
         chunk_queue_destroy(&chunker_filtering_queue);
         chunk_queue_destroy(&filtering_reconstruction_queue);
@@ -64,8 +118,9 @@ void ExitHandler(int signum) {
 }
 
 int main(int argc, char* argv[]) {
-    
-    const char *directoryPath = "../images";
+    arg_parse(argc, argv);
+
+    const char *directoryPath = input_directory;
     int exit_status = 0;
 
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
@@ -95,7 +150,7 @@ int main(int argc, char* argv[]) {
         char err_msg[512];
         snprintf(err_msg, sizeof(err_msg), "Target directory '%s' does not exist or cannot be opened", directoryPath);
         perror(err_msg);
-        fprintf(stderr, "Please ensure the '../images' directory exists relative to the build directory.\n");
+        FPRINTF(stderr, "Please ensure the '../images' directory exists relative to the build directory.\n");
         return EXIT_FAILURE;
     }
 
@@ -111,14 +166,14 @@ int main(int argc, char* argv[]) {
         goto Cleanup;
     }
     
-    printf("Starting image watcher thread for directory: %s\n", directoryPath);
+    PRINTF("Starting image watcher thread for directory: %s\n", directoryPath);
     if (pthread_create(&watcher_thread, NULL, read_images_from_directory, (void *)directoryPath) != 0) { // Removed watcher_attr
         perror("Failed to create watcher thread");
         exit_status = EXIT_FAILURE;
         goto Cleanup;
     }
 
-    printf("Starting %zu chunker threads...\n", num_chunker_threads);
+    PRINTF("Starting %zu chunker threads...\n", num_chunker_threads);
     for (size_t i = 0; i < num_chunker_threads; i++) {
         if (pthread_create(&chunker_threads[i], NULL, chunk_image_thread, NULL) != 0) {
             perror("Failed to create a chunker thread");
@@ -142,7 +197,7 @@ int main(int argc, char* argv[]) {
     // Join them later
     unsigned int num_filter_threads = num_chunker_threads;
     pthread_t *filter_threads = (pthread_t *) malloc(num_filter_threads * sizeof(pthread_t));
-    printf("Starting %zu image processing threads...\n", num_filter_threads);
+    PRINTF("Starting %zu image processing threads...\n", num_filter_threads);
     for (size_t i = 0; i < num_filter_threads; i++) {
         if (pthread_create(&filter_threads[i], NULL, process_chunk, NULL) != 0) {
             perror("Failed to create a filter thread");
@@ -173,46 +228,49 @@ int main(int argc, char* argv[]) {
     // 
     // #################################################################
 
-    printf("Watcher thread started. Waiting for signal (SIGINT/SIGTERM)...\n");
+    PRINTF("Watcher thread started. Waiting for signal (SIGINT/SIGTERM)...\n");
     while (!stop_flag) 
         sleep(1);
 
-    printf("\nShutdown signal received.\n");
-    printf("Attempting to cancel watcher & chunker thread (if possible)...\n");
+    PRINTF("\nShutdown signal received.\n");
+    PRINTF("Attempting to cancel watcher & chunker thread (if possible)...\n");
     pthread_join(watcher_thread, NULL); 
 
-    printf("Broadcasting to chunker threads...\n");
+    PRINTF("Broadcasting to chunker threads...\n");
     broadcast_image_name_queue(&name_queue);
     broadcast_chunk_queue(&chunker_filtering_queue);
     broadcast_chunk_queue(&filtering_reconstruction_queue);
 
-    printf("Waiting for chunker threads to finish...\n");
+    PRINTF("Waiting for chunker threads to finish...\n");
     for (size_t i = 0; i < num_chunker_threads; i++) {
         pthread_join(chunker_threads[i], NULL);
-        printf("Chunker thread %zu finished.\n", i);
+        PRINTF("Chunker thread %zu finished.\n", i);
     }
 
     // join filtering threads here. 
-    printf("Waiting for filtering threads to finish...\n");
+    PRINTF("Waiting for filtering threads to finish...\n");
     for (size_t i = 0; i < num_filter_threads; i++) {
         pthread_join(filter_threads[i], NULL);
-        printf("Filtering thread %zu finished.\n", i);
+        PRINTF("Filtering thread %zu finished.\n", i);
     }   
 
     // join reconstructio threads here.
     pthread_join(*recon_thread, NULL);
     free(recon_thread);
 
-    printf("All chunker threads finished.\n");
+    pthread_join(*recon_thread, NULL);
+    free(recon_thread);
 
-    printf("Cleaning up resources...\n");
+    PRINTF("All chunker threads finished.\n");
+
+    PRINTF("Cleaning up resources...\n");
 
     Cleanup:
         cleanup_resources();
         free(chunker_threads);
         chunker_threads = NULL;
 
-    printf("Cleanup complete. Exiting.\n");
+    PRINTF("Cleanup complete. Exiting.\n");
 
     return exit_status; 
 }

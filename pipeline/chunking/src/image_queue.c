@@ -6,6 +6,8 @@
 #include<errno.h>      
 #include<image_queue.h>       
 
+#include "macros.h"
+
 extern volatile sig_atomic_t stop_flag;
 
 int image_name_queue_init(image_name_queue_t* q) {
@@ -53,7 +55,7 @@ int enqueue_image_name(image_name_queue_t *q, const char *name) {
         
         // very unlikely to happen
         if (q->head != NULL) {
-            fprintf(stderr, "enqueue_image_name: Queue inconsistency detected (tail is NULL, head is not)\n");
+            FPRINTF(stderr, "enqueue_image_name: Queue inconsistency detected (tail is NULL, head is not)\n");
             pthread_mutex_unlock(&q->lock);
             free(new_node->name);
             free(new_node);
@@ -72,7 +74,7 @@ int enqueue_image_name(image_name_queue_t *q, const char *name) {
     pthread_cond_signal(&q->cond_not_empty);
     pthread_mutex_unlock(&q->lock);
 
-    printf("image name enqueued successfully: %s\n", name); // Debugging
+    PRINTF("image name enqueued successfully: %s\n", name); // Debugging
 
     return 0;
 }
@@ -88,7 +90,7 @@ char* dequeue_image_name(image_name_queue_t *q) {
 
     if (stop_flag && q->head == NULL) { 
         pthread_mutex_unlock(&q->lock);
-        printf("dequeue: Stop flag detected, returning NULL.\n"); 
+        PRINTF("dequeue: Stop flag detected, returning NULL.\n"); 
         return NULL; 
     }
 
@@ -104,7 +106,7 @@ char* dequeue_image_name(image_name_queue_t *q) {
 
     free(dequeue_node); 
 
-    printf("image name dequeued successfully: %s\n", name); 
+    PRINTF("image name dequeued successfully: %s\n", name); 
 
     return name; 
 }
@@ -135,5 +137,5 @@ void image_name_queue_destroy(image_name_queue_t* q) {
     pthread_mutex_destroy(&q->lock);
     pthread_cond_destroy(&q->cond_not_empty);
 
-    printf("Image Name queue destroyed successfully\n");
+    PRINTF("Image Name queue destroyed successfully\n");
 }
