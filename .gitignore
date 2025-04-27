@@ -3,3 +3,4 @@ build/
 vendors/
 images/
 filtered_images/
+shared/argparser.h

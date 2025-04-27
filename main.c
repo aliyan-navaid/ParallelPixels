@@ -4,6 +4,8 @@
 #include<dirent.h>
 #include<errno.h>
 #include<stdio.h>
+#include<stdbool.h>
+#include <sys/stat.h>
 
 #include<image.h>
 #include<image_queue.h>
@@ -16,6 +18,57 @@
 
 image_name_queue_t name_queue;
 chunk_queue_t chunker_filtering_queue, filtering_reconstruction_queue;
+
+const char* input_directory = "../images";
+const char* out_directory = ".";
+const char* effects = NULL;
+
+bool is_directory(const char* path) {
+    struct stat path_stat;
+    if (stat(path, &path_stat) != 0) {
+        perror("stat failed");
+        return false;
+    }
+    return S_ISDIR(path_stat.st_mode);
+}
+
+void arg_parse(int argc, char* argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
+        exit(EXIT_FAILURE);
+    }
+
+    input_directory = argv[1];
+
+    for (int i = 2; i < argc; i++) {
+        if (strcmp(argv[i], "-e") == 0 && i + 1 < argc) {
+            effects = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
+            out_directory = argv[i + 1];
+            i++;
+        } else {
+            fprintf(stderr, "Unknown argument: %s\n", argv[i]);
+            fprintf(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (!is_directory(input_directory)) {
+        fprintf(stderr, "Error: Input directory '%s' does not exist or is not a directory.\n", input_directory);
+        exit(EXIT_FAILURE);
+    }
+
+    if (!is_directory(out_directory)) {
+        fprintf(stderr, "Error: Output directory '%s' does not exist or is not a directory.\n", out_directory);
+        exit(EXIT_FAILURE);
+    }
+
+    if (effects == NULL) {
+        fprintf(stderr, "Error: Effects not specified. Use -e <effects> to specify effects.\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
 volatile sig_atomic_t stop_flag = 0;
 
@@ -64,8 +117,9 @@ void ExitHandler(int signum) {
 }
 
 int main(int argc, char* argv[]) {
-    
-    const char *directoryPath = "../images";
+    arg_parse(argc, argv);
+
+    const char *directoryPath = input_directory;
     int exit_status = 0;
 
     long cores = sysconf(_SC_NPROCESSORS_ONLN);

@@ -43,7 +43,7 @@ void task_function(Object obj) {
 
     image_t image = image_from_chunks(chunks_list);
 
-    const char* path = "../filtered_images";
+    const char* path = out_directory;
     const char* org_name = get_image_chunk(chunks_list->head->data)->original_image_name;
     char* suffix = generate_suffix(NULL, 0);
     char* output_path = result_path(path, org_name, suffix);

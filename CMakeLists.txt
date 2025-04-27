@@ -10,7 +10,7 @@ find_package(Threads REQUIRED)
 find_library(MATH_LIBRARY m)
 
 # Main Executable
-add_executable(main
+add_executable(ppxl
     main.c
 
     pipeline/chunking/src/directory_monitor.c
@@ -34,7 +34,7 @@ add_executable(main
 
 add_library(xxhash STATIC ${CMAKE_CURRENT_SOURCE_DIR}/vendors/xxHash/xxhash.c)
 
-target_include_directories(main PRIVATE
+target_include_directories(ppxl PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared
     ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/chunking/include
     ${CMAKE_CURRENT_SOURCE_DIR}/pipeline/filter/include
@@ -43,7 +43,7 @@ target_include_directories(main PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/vendors/xxHash
 )
 
-target_link_libraries(main PRIVATE
+target_link_libraries(ppxl PRIVATE
     xxhash
     Threads::Threads
     ${MATH_LIBRARY}
