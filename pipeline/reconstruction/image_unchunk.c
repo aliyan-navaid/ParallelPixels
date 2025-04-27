@@ -2,6 +2,10 @@
 
 #include "image_unchunk.h"
 #include <stb_image_write.h>
+#include <stdatomic.h>
+#include <macros.h>
+
+extern atomic_size_t total_images_written;
 
 char *generate_suffix(const char **effects, int num_effects) {
     return strdup("processed"); // simple for now
@@ -145,8 +149,11 @@ void write_image(image_t image, const char *path) {
     assert(path != NULL);
 
     int result = stbi_write_jpg(path, image.width, image.height, image.channels, image.pixel_data, 100);
+    
     // int result = stbi_write_png(path, image.width, image.height, image.channels, image.pixel_data, image.width * image.channels);
     assert(result != 0);
+    atomic_fetch_add_explicit(&total_images_written, 1, memory_order_relaxed);
+    fflush(stdout);
 }
 
 image_t image_from_chunks(dlist_t *chunks) {

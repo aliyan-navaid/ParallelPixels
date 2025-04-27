@@ -5,7 +5,7 @@
 #include<errno.h>
 #include<stdio.h>
 #include<stdbool.h>
-#include <sys/stat.h>
+#include<sys/stat.h>
 
 #include<image.h>
 #include<image_queue.h>
@@ -13,6 +13,7 @@
 #include<image_chunker.h>
 #include<directory_monitor.h>
 #include<chunk_threader.h>
+#include<stdatomic.h>
 
 #include "reconstruction.h"
 #include "macros.h"
@@ -21,8 +22,54 @@ image_name_queue_t name_queue;
 chunk_queue_t chunker_filtering_queue, filtering_reconstruction_queue;
 
 const char* input_directory = "../images";
-const char* out_directory = ".";
+const char* out_directory = "../filtered_images";
 const char* effects = NULL;
+
+atomic_size_t total_images_read = 0;
+atomic_size_t total_images_written = 0;
+atomic_size_t total_images_discarded = 0;
+
+void* update_stats(void* param) {    
+    printf("Total Images Read:      %zu\033[K\n", total_images_read);
+    printf("Total Images Written:   %zu\033[K\n", total_images_written);
+    printf("Total Images Discarded: %zu\033[K\n", total_images_discarded);
+    fflush(stdout); 
+
+    while (!stop_flag) {
+
+        printf("\033[3A");
+        printf("\rTotal Images Read:      %zu\033[K\n", total_images_read);
+        printf("Total Images Written:   %zu\033[K\n", total_images_written);
+        printf("Total Images Discarded: %zu\033[K\n", total_images_discarded);
+        printf("Enter 'e' to Exit: ");
+        fflush(stdout); 
+
+        usleep(100000);
+    }
+
+    return NULL;
+}
+
+void* input_listener(void* param) {
+    printf("\nPress 'e' then Enter to initiate shutdown via SIGINT.\n");
+    int character;
+    while (true) {
+        character = getchar(); 
+
+        if (character == 'e') {
+            printf("Exiting The process.\n\n");
+            fflush(stdout);
+            raise(SIGINT);
+            break; 
+        } else if (character == EOF) {
+            printf("Input stream closed. Raising SIGINT...\n");
+            fflush(stdout);
+            raise(SIGINT);
+            break;
+        }
+    }
+    return NULL;
+}
 
 bool is_directory(const char* path) {
     struct stat path_stat;
@@ -35,7 +82,7 @@ bool is_directory(const char* path) {
 
 void arg_parse(int argc, char* argv[]) {
     if (argc < 2) {
-        FPRINTF(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
+        fprintf(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
         exit(EXIT_FAILURE);
     }
 
@@ -49,24 +96,24 @@ void arg_parse(int argc, char* argv[]) {
             out_directory = argv[i + 1];
             i++;
         } else {
-            FPRINTF(stderr, "Unknown argument: %s\n", argv[i]);
-            FPRINTF(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
+            fprintf(stderr, "Unknown argument: %s\n", argv[i]);
+            fprintf(stderr, "Usage: ppxl <input_directory> -e <effects> -o <output_directory>\n");
             exit(EXIT_FAILURE);
         }
     }
 
     if (!is_directory(input_directory)) {
-        FPRINTF(stderr, "Error: Input directory '%s' does not exist or is not a directory.\n", input_directory);
+        fprintf(stderr, "Error: Input directory '%s' does not exist or is not a directory.\n", input_directory);
         exit(EXIT_FAILURE);
     }
 
     if (!is_directory(out_directory)) {
-        FPRINTF(stderr, "Error: Output directory '%s' does not exist or is not a directory.\n", out_directory);
+        fprintf(stderr, "Error: Output directory '%s' does not exist or is not a directory.\n", out_directory);
         exit(EXIT_FAILURE);
     }
 
     if (effects == NULL) {
-        FPRINTF(stderr, "Error: Effects not specified. Use -e <effects> to specify effects.\n");
+        fprintf(stderr, "Error: Effects not specified. Use -e <effects> to specify effects.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -113,11 +160,15 @@ void cleanup_resources(void) {
 
 void ExitHandler(int signum) {
     stop_flag = 1;
-    const char msg[] = "\nSignal received, initiating shutdown...\n";
-    write(STDOUT_FILENO, msg, sizeof(msg) - 1);
+/*     const char msg[] = "\nSignal received, initiating shutdown...\n";
+    write(STDOUT_FILENO, msg, sizeof(msg) - 1); */
 }
 
 int main(int argc, char* argv[]) {
+
+    // For Debugging purposes only!
+    //argc = 6; argv[1] = "../images"; argv[2] = "-e"; argv[3] = "greyscale"; argv[4] = "-o"; argv[5] = "../filtered_images";
+
     arg_parse(argc, argv);
 
     const char *directoryPath = input_directory;
@@ -126,7 +177,7 @@ int main(int argc, char* argv[]) {
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
     const size_t num_chunker_threads = (cores > 1)? (size_t)cores: 2; 
 
-    pthread_t watcher_thread;
+    pthread_t watcher_thread, stats_updater, input_thread;
     pthread_t *chunker_threads = NULL;
 
     struct sigaction sa;
@@ -162,6 +213,20 @@ int main(int argc, char* argv[]) {
     chunker_threads = malloc(num_chunker_threads * sizeof(pthread_t));
     if (chunker_threads == NULL) {
         perror("Failed to allocate memory for chunker thread IDs");
+        exit_status = EXIT_FAILURE;
+        goto Cleanup;
+    }
+
+    PRINTF("Starting input listener thread...\n");
+    if (pthread_create(&input_thread, NULL, input_listener, NULL) != 0) { // <<< Create input thread
+        perror("Failed to create input listener thread");
+        exit_status = EXIT_FAILURE;
+        goto Cleanup;
+    }
+
+    PRINTF("Starting stats updated thread\n");
+    if (pthread_create(&stats_updater, NULL, update_stats, (void *)NULL) != 0) { // Removed watcher_attr
+        perror("Failed to create stats_updater thread");
         exit_status = EXIT_FAILURE;
         goto Cleanup;
     }
@@ -258,8 +323,9 @@ int main(int argc, char* argv[]) {
     pthread_join(*recon_thread, NULL);
     free(recon_thread);
 
-    pthread_join(*recon_thread, NULL);
-    free(recon_thread);
+    pthread_join(stats_updater, NULL);
+
+    pthread_join(input_thread, NULL);
 
     PRINTF("All chunker threads finished.\n");
 

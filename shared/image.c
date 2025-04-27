@@ -4,10 +4,12 @@
 #include<image.h>
 #include<stdio.h>
 #include<errno.h> 
+#include<stdatomic.h>
 
 #include "macros.h"
 
 extern volatile sig_atomic_t stop_flag;
+extern atomic_size_t total_images_discarded;
 
 // #######################################
 // # Add Object Interface for image_chunk_t
@@ -192,6 +194,7 @@ int discarded_images_table_add(const char *filename) {
         entry->name[sizeof(entry->name) - 1] = '\0';
 
         HASH_ADD_STR(discarded_images_head, name, entry);
+        atomic_fetch_add_explicit(&total_images_discarded, 1, memory_order_relaxed);
     }
 
     pthread_mutex_unlock(&discarded_images_lock);

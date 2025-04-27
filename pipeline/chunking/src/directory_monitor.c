@@ -8,11 +8,13 @@
 #include<stdlib.h>     
 #include<directory_monitor.h>
 #include<file_tracker.h>
+#include<stdatomic.h>
 #include<image_queue.h>       
 
 #include "macros.h"
 
 extern volatile sig_atomic_t stop_flag; 
+extern atomic_size_t total_images_read;
 extern image_name_queue_t name_queue;
 
 void *read_images_from_directory(void *arg) {
@@ -38,6 +40,7 @@ void *read_images_from_directory(void *arg) {
             if (!was_file_processed(current_filename)) {
                 add_processed_file(current_filename);
                 should_process = true;
+                atomic_fetch_add_explicit(&total_images_read, 1, memory_order_relaxed);
             }
         }
 
@@ -73,6 +76,7 @@ void *read_images_from_directory(void *arg) {
             if (strstr(current_filename, ".jpg") || strstr(current_filename, ".png")) {
                 if (!was_file_processed(current_filename)) {
                     add_processed_file(current_filename);
+                    atomic_fetch_add_explicit(&total_images_read, 1, memory_order_relaxed);
                     should_process = true;
                 }
             }
