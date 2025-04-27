@@ -5,12 +5,13 @@
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "Object.h"
 #include "dlist.h"
 #include "image.h"
 
-const char *generate_suffix(const char **effects, int num_effects);
+char *generate_suffix(const char **effects, int num_effects);
 
 /* Generates a new path for the output file.
 * @param output_dir The directory where the output file will be saved.
