@@ -52,7 +52,7 @@ void task_function(Object obj) {
     cleanup_image(&image);
 
     free((char*)output_path);
-    //free((char*)suffix);
+    free((char*)suffix);
 }
 
 static thread_pool_t* init_threadpool() {

@@ -20,12 +20,7 @@ add_executable(main
     
     pipeline/filter/src/chunk_threader.c
     pipeline/filter/src/filter.c
-<<<<<<< HEAD
-    pipeline/chunking/src/image_queue.c 
-
-=======
     
->>>>>>> 7c6d7e6 (feat: Add `xxHash` library from `https://github.com/Cyan4973/xxHash#`)
     shared/Object.c
     shared/darray.c
     shared/dlist.c
@@ -34,10 +29,7 @@ add_executable(main
     shared/thread_pool.c
 
     pipeline/reconstruction/image_unchunk.c
-<<<<<<< HEAD
-=======
     pipeline/reconstruction/reconstruction.c
->>>>>>> 7c6d7e6 (feat: Add `xxHash` library from `https://github.com/Cyan4973/xxHash#`)
 )
 
 add_library(xxhash STATIC ${CMAKE_CURRENT_SOURCE_DIR}/vendors/xxHash/xxhash.c)

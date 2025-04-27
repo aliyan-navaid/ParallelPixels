@@ -4,7 +4,7 @@
 #include "image_unchunk.h"
 
 const char *generate_suffix(const char **effects, int num_effects) {
-    return "processed"; // simple for now
+    return strdup("processed"); // simple for now
 }
 
 /*
