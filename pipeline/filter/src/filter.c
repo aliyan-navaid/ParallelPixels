@@ -7,7 +7,7 @@
 extern chunk_queue_t filtering_reconstruction_queue;
 
 int greyscale(image_chunk_t* chunk) {
-
+    
     if (!chunk) {
         fprintf(stderr, "Error: chunk is NULL\n");
         return EXIT_FAILURE;

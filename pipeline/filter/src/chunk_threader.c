@@ -8,6 +8,8 @@
 #include <filter.h>
 
 extern volatile sig_atomic_t stop_flag;
+extern const char* out_directory;
+extern const char* effects;
 
 void *process_chunk(void *arg) {
     while (!stop_flag) {
@@ -19,9 +21,27 @@ void *process_chunk(void *arg) {
             continue;
         }
         
-        if (directional_blur(chunk, 100)) {
-            discarded_images_table_add(chunk->original_image_name);
-            continue;
+        if (!effects) {
+            stop_flag =1;
+            continue;;
+        }
+        
+        int filter_result = EXIT_FAILURE;
+        if (strcmp(effects, "greyscale") == 0) {
+            filter_result = greyscale(chunk);
+        } else if (strcmp(effects, "posterize") == 0) {
+            filter_result = posterize(chunk, 4);
+        } else if (strcmp(effects, "directional_blur") == 0) {
+            filter_result = directional_blur(chunk, 50);
+        } else {
+            fprintf(stderr, "Unknown effect: %s\n", effects);
+            stop_flag = 1;
+            continue;;
+        }
+
+        if (filter_result != EXIT_SUCCESS) {
+            stop_flag = 1;
+            continue;;
         }
         
         // Enqueue the filtered chunk into the next queue
