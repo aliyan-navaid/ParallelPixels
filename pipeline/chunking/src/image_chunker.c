@@ -11,6 +11,8 @@
 #include<image_queue.h>      
 #include<image.h>
 
+#include "macros.h"
+
 extern volatile sig_atomic_t stop_flag;
 extern image_name_queue_t name_queue;
 extern chunk_queue_t chunker_filtering_queue;
@@ -18,7 +20,7 @@ extern chunk_queue_t chunker_filtering_queue;
 unsigned char *load_image(const char *filename, int *width, int *height, int *channels) {
     unsigned char *data = stbi_load(filename, width, height, channels, 0);
     if (data == NULL) {
-        fprintf(stderr, "load_image: Error loading image '%s': %s\n", filename, stbi_failure_reason());
+        FPRINTF(stderr, "load_image: Error loading image '%s': %s\n", filename, stbi_failure_reason());
         return NULL;
     }
 
@@ -31,7 +33,7 @@ static int create_chunks_internal(const char *original_filename,
                                               int chunk_width, int chunk_height)
 {
     if (!image_data || width <= 0 || height <= 0 || channels <= 0 || chunk_width <= 0 || chunk_height <= 0) {
-        fprintf(stderr, "Thread %lu: create_chunks_internal: Invalid input parameters for %s.\n", pthread_self(), original_filename);
+        FPRINTF(stderr, "Thread %lu: create_chunks_internal: Invalid input parameters for %s.\n", pthread_self(), original_filename);
         return -1;
     }
 
@@ -40,7 +42,7 @@ static int create_chunks_internal(const char *original_filename,
     int num_chunks_total = num_chunks_x * num_chunks_y;
 
     if (num_chunks_total <= 0) {
-         fprintf(stderr, "Thread %lu: create_chunks_internal: Calculated zero chunks for %s.\n", pthread_self(), original_filename);
+         FPRINTF(stderr, "Thread %lu: create_chunks_internal: Calculated zero chunks for %s.\n", pthread_self(), original_filename);
          return -1;
     }
 
@@ -58,7 +60,7 @@ static int create_chunks_internal(const char *original_filename,
 
     size_t bytes_per_pixel = channels;
 
-    printf("Thread %lu: Creating %d chunks for %s...\n", pthread_self(), num_chunks_total, original_filename);
+    PRINTF("Thread %lu: Creating %d chunks for %s...\n", pthread_self(), num_chunks_total, original_filename);
 
     for (int cy = 0; cy < num_chunks_y && !stop_flag; cy++) { // Check stop_flag
         for (int cx = 0; cx < num_chunks_x && !stop_flag; cx++) { // Check stop_flag
@@ -149,7 +151,7 @@ static int create_chunks_internal(const char *original_filename,
 
             chunk->processing_status = CHUNK_STATUS_CREATED;
             if (chunk_enqueue(&chunker_filtering_queue, chunk) != 0) {
-                fprintf(stderr, "Thread %lu: create_chunks_internal: Failed to enqueue chunk %d for %s\n",
+                FPRINTF(stderr, "Thread %lu: create_chunks_internal: Failed to enqueue chunk %d for %s\n",
                         pthread_self(), current_chunk_index, original_filename);
                 free_image_chunk(chunk);
                 chunk = NULL;
@@ -167,9 +169,9 @@ static int create_chunks_internal(const char *original_filename,
         if (stop_flag) exit_status = -1; 
 
         if (exit_status == 0) 
-            /* printf("Thread %lu: Finished creating %d chunks for %s.\n", pthread_self(), current_chunk_index, original_filename) */;
+            /* PRINTF("Thread %lu: Finished creating %d chunks for %s.\n", pthread_self(), current_chunk_index, original_filename) */;
         else {
-            //fprintf(stderr, "Thread %lu: Failed or stopped during chunk creation for %s (processed %d chunks).\n", pthread_self(), original_filename, current_chunk_index);
+            //FPRINTF(stderr, "Thread %lu: Failed or stopped during chunk creation for %s (processed %d chunks).\n", pthread_self(), original_filename, current_chunk_index);
             discarded_images_table_add(original_filename);
         }
 
@@ -181,7 +183,7 @@ void *chunk_image_thread(void *arg) {
 
         char* filename = dequeue_image_name(&name_queue);    
         if (filename == NULL) {
-            fprintf(stderr, "Chunk Image Thread: Cannot proceed - filename = NULL\n");
+            FPRINTF(stderr, "Chunk Image Thread: Cannot proceed - filename = NULL\n");
             free(filename);
             continue;
         }
@@ -190,7 +192,7 @@ void *chunk_image_thread(void *arg) {
         
         unsigned char* image_data = load_image(filename, &width, &height, &channels);    
         if (image_data == NULL) {
-            fprintf(stderr, "Chunk Image Thread: Cannot proceed - Image Data = NULL\n");
+            FPRINTF(stderr, "Chunk Image Thread: Cannot proceed - Image Data = NULL\n");
             free(filename);
             continue;
         }
@@ -201,7 +203,7 @@ void *chunk_image_thread(void *arg) {
         int calc_chunk_width = (width < fixed_chunk_width)? width: fixed_chunk_width;
         int calc_chunk_height = (height < fixed_chunk_height)? height: fixed_chunk_height;
 
-        printf("Chunker thread %lu: Processing %s with target chunk size: %dx%d\n",
+        PRINTF("Chunker thread %lu: Processing %s with target chunk size: %dx%d\n",
             pthread_self(), filename, calc_chunk_width, calc_chunk_height);
 
         int output = create_chunks_internal(
@@ -212,7 +214,7 @@ void *chunk_image_thread(void *arg) {
         );
 
         if (output != 0) 
-            fprintf(stderr, "Chunker thread failed for %s.\n", filename);
+            FPRINTF(stderr, "Chunker thread failed for %s.\n", filename);
 
         stbi_image_free(image_data);
         image_data = NULL;
@@ -220,7 +222,7 @@ void *chunk_image_thread(void *arg) {
         filename = NULL;
     }
 
-    printf("Chunker thread finished successfully.\n");
+    PRINTF("Chunker thread finished successfully.\n");
     
     return NULL;
 }

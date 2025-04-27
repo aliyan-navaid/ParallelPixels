@@ -5,6 +5,8 @@
 #include<stdio.h>
 #include<errno.h> 
 
+#include "macros.h"
+
 extern volatile sig_atomic_t stop_flag;
 
 // #######################################
@@ -81,7 +83,7 @@ int chunk_enqueue(chunk_queue_t* q, image_chunk_t* c) {
     if (q->tail == NULL) { 
         // very rare
         if (q->head != NULL) {
-            fprintf(stderr, "chunk_enqueue: Queue inconsistency detected (tail is NULL, head is not)\n");
+            FPRINTF(stderr, "chunk_enqueue: Queue inconsistency detected (tail is NULL, head is not)\n");
             pthread_mutex_unlock(&q->lock);
             free(new_node);
             return -1; 
@@ -99,7 +101,7 @@ int chunk_enqueue(chunk_queue_t* q, image_chunk_t* c) {
     pthread_cond_signal(&q->cond_not_empty);
     pthread_mutex_unlock(&q->lock);
 
-    //printf("Chunk enqueued successfully (ID: %d)\n", c->chunk_id); 
+    //PRINTF("Chunk enqueued successfully (ID: %d)\n", c->chunk_id); 
 
     return 0;
 }
@@ -114,7 +116,7 @@ image_chunk_t* chunk_dequeue(chunk_queue_t* q) {
 
     if (stop_flag && q->head == NULL) {
         pthread_mutex_unlock(&q->lock);
-        printf("chunk_dequeue: Stop flag detected, returning NULL.\n"); 
+        PRINTF("chunk_dequeue: Stop flag detected, returning NULL.\n"); 
         return NULL;
     }
 
@@ -129,7 +131,7 @@ image_chunk_t* chunk_dequeue(chunk_queue_t* q) {
     pthread_mutex_unlock(&q->lock);
     free(dequeue_node); 
 
-    //printf("Chunk dequeued successfully (ID: %d)\n", chunk->chunk_id); 
+    //PRINTF("Chunk dequeued successfully (ID: %d)\n", chunk->chunk_id); 
 
     return chunk;
 }
@@ -160,7 +162,7 @@ void chunk_queue_destroy(chunk_queue_t* q) {
     pthread_mutex_destroy(&q->lock);
     pthread_cond_destroy(&q->cond_not_empty);
 
-    printf("Chunk queue destroyed successfully\n");
+    PRINTF("Chunk queue destroyed successfully\n");
 }
 
 discarded_image_entry_t* discarded_images_head = NULL;

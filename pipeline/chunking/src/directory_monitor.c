@@ -10,6 +10,8 @@
 #include<file_tracker.h>
 #include<image_queue.h>       
 
+#include "macros.h"
+
 extern volatile sig_atomic_t stop_flag; 
 extern image_name_queue_t name_queue;
 
@@ -43,7 +45,7 @@ void *read_images_from_directory(void *arg) {
             char imagePath[1024];
             snprintf(imagePath, sizeof(imagePath), "%s/%s", directoryPath, current_filename);
             if (enqueue_image_name(&name_queue, imagePath) != 0) 
-                fprintf(stderr, "read_images_from_directory: Image name enqueue failed");
+                FPRINTF(stderr, "read_images_from_directory: Image name enqueue failed");
         }
     }
 
@@ -79,7 +81,7 @@ void *read_images_from_directory(void *arg) {
                 char imagePath[1024];
                 snprintf(imagePath, sizeof(imagePath), "%s/%s", directoryPath, current_filename);
                 if (enqueue_image_name(&name_queue, imagePath) != 0) 
-                    fprintf(stderr, "read_images_from_directory: Cannot enqueue image name");
+                    FPRINTF(stderr, "read_images_from_directory: Cannot enqueue image name");
             }
         }
         

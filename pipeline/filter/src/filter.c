@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include "macros.h"
+
 #define MIN(a,b) a>b ? b : a 
 
 extern chunk_queue_t filtering_reconstruction_queue;
@@ -9,12 +11,12 @@ extern chunk_queue_t filtering_reconstruction_queue;
 int greyscale(image_chunk_t* chunk) {
     
     if (!chunk) {
-        fprintf(stderr, "Error: chunk is NULL\n");
+        FPRINTF(stderr, "Error: chunk is NULL\n");
         return EXIT_FAILURE;
     }
 
     if (!chunk->pixel_data) {
-        fprintf(stderr, "Error: pixel_data is NULL\n");
+        FPRINTF(stderr, "Error: pixel_data is NULL\n");
         return EXIT_FAILURE;
     }
 
@@ -35,11 +37,11 @@ int greyscale(image_chunk_t* chunk) {
 
 int directional_blur(image_chunk_t* chunk, int line_size) {
     if (!chunk) {
-        fprintf(stderr, "Error: chunk is NULL\n");
+        FPRINTF(stderr, "Error: chunk is NULL\n");
         return EXIT_FAILURE;
     }
     if (!chunk->pixel_data) {
-        fprintf(stderr, "Error: pixel_data is NULL\n");
+        FPRINTF(stderr, "Error: pixel_data is NULL\n");
         return EXIT_FAILURE;
     }
 
@@ -49,7 +51,7 @@ int directional_blur(image_chunk_t* chunk, int line_size) {
     unsigned char* src = chunk->pixel_data;
     unsigned char* dst = malloc(width * height * channels);
     if (!dst) {
-        fprintf(stderr, "Error: failed to allocate blur buffer\n");
+        FPRINTF(stderr, "Error: failed to allocate blur buffer\n");
         return EXIT_FAILURE;
     }
 
@@ -79,11 +81,11 @@ int directional_blur(image_chunk_t* chunk, int line_size) {
 
 int posterize(image_chunk_t* chunk, int levels) {
     if (!chunk) {
-        fprintf(stderr, "Error: chunk is NULL\n");
+        FPRINTF(stderr, "Error: chunk is NULL\n");
         return EXIT_FAILURE;
     }
     if (!chunk->pixel_data) {
-        fprintf(stderr, "Error: pixel_data is NULL\n");
+        FPRINTF(stderr, "Error: pixel_data is NULL\n");
         return EXIT_FAILURE;
     }
 
